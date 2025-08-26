@@ -1,5 +1,0 @@
-.how{display:grid;gap:18px;text-align:center}
-.how h1{font-weight:800;color:var(--headline);font-size:clamp(28px,5vw,56px);margin:0}
-.how-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-.how-grid .card{padding:24px}
-@media (max-width:800px){.how-grid{grid-template-columns:1fr}}
