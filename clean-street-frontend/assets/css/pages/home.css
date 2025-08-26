@@ -1,0 +1,5 @@
+.hero{text-align:center}
+.hero-title-top{font-weight:800;color:var(--headline);font-size:clamp(36px,7vw,92px);line-height:1.05;margin:0}
+.hero-title-bottom{display:block;font-weight:800;color:var(--teal);font-size:clamp(42px,8vw,110px)}
+.subcopy{color:var(--muted);font-size:clamp(16px,2.2vw,24px);max-width:1000px;margin:14px auto 0}
+.cta{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:18px}

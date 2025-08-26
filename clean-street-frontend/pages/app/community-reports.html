@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Community Reports</title>
+<link rel="stylesheet" href="../../assets/css/main.css"><link rel="stylesheet" href="../../assets/css/pages/reports.css">
+</head><body>
+<header data-include="../../partials/app-nav.html"></header>
+<main class="vh-screen">
+  <section class="container report-list">
+    <article class="card report-card">
+      <div class="badge">OPEN</div>
+      <div>Pothole near 5th Ave</div>
+      <div class="report-actions">
+        <a class="btn btn-outline">👍 12</a>
+        <a class="btn btn-outline">💬 3</a>
+      </div>
+    </article>
+    <article class="card report-card">
+      <div class="badge">IN PROGRESS</div>
+      <div>Streetlight not working</div>
+      <div class="report-actions">
+        <a class="btn btn-outline">👍 7</a>
+        <a class="btn btn-outline">💬 1</a>
+      </div>
+    </article>
+  </section>
+</main>
+<script type="module">
+  import { include } from "../../assets/js/components/include-partials.js";
+  include("header[data-include]","../../partials/app-nav.html");
+  import "./../../assets/js/pages/reports.js";
+</script>
+</body></html>

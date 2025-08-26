@@ -1,0 +1,5 @@
+.auth-wrap{display:grid;place-items:center}
+.auth-card{width:min(420px,90vw)}
+.auth-card h2{margin:0 0 10px;font-weight:800;color:var(--headline)}
+.auth-card .row{display:grid;gap:10px;margin-top:10px}
+.auth-card .actions{display:flex;gap:12px;justify-content:space-between;margin-top:16px}

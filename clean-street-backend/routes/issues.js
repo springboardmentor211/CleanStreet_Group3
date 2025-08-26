@@ -1,0 +1,308 @@
+// const express = require('express');
+// const { body, validationResult } = require('express-validator');
+// const { auth } = require('../middleware/auth');
+// const Issue = require('../models/Issue');
+// const User = require('../models/User');
+// const router = express.Router();
+
+// // Get all issues with filtering and pagination
+// router.get('/', async (req, res) => {
+//   try {
+//     const {
+//       page = 1,
+//       limit = 10,
+//       status,
+//       category,
+//       sortBy = 'createdAt',
+//       sortOrder = 'desc'
+//     } = req.query;
+
+//     // Build filter object
+//     const filter = {};
+//     if (status) filter.status = status;
+//     if (category) filter.category = category;
+
+//     // Build sort object
+//     const sort = {};
+//     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+//     const issues = await Issue.find(filter)
+//       .populate('reportedBy', 'username fullName')
+//       .populate('assignedTo', 'username fullName')
+//       .sort(sort)
+//       .limit(limit * 1)
+//       .skip((page - 1) * limit);
+
+//     const total = await Issue.countDocuments(filter);
+
+//     res.json({
+//       issues,
+//       totalPages: Math.ceil(total / limit),
+//       currentPage: page,
+//       total
+//     });
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Get a specific issue
+// router.get('/:id', async (req, res) => {
+//   try {
+//     const issue = await Issue.findById(req.params.id)
+//       .populate('reportedBy', 'username fullName')
+//       .populate('assignedTo', 'username fullName')
+//       .populate('comments.user', 'username fullName');
+
+//     if (!issue) {
+//       return res.status(404).json({ message: 'Issue not found' });
+//     }
+
+//     res.json(issue);
+//   } catch (error) {
+//     console.error(error.message);
+//     if (error.kind === 'ObjectId') {
+//       return res.status(404).json({ message: 'Issue not found' });
+//     }
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Create a new issue
+// router.post('/', [
+//   auth,
+//   body('title').notEmpty().withMessage('Title is required'),
+//   body('description').notEmpty().withMessage('Description is required'),
+//   body('category').isIn(['Pothole', 'Garbage', 'Streetlight', 'Water', 'Other']).withMessage('Invalid category'),
+//   body('location.address').notEmpty().withMessage('Location address is required')
+// ], async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({ errors: errors.array() });
+//     }
+
+//     const { title, description, category, location, images, priority } = req.body;
+
+//     const issue = new Issue({
+//       title,
+//       description,
+//       category,
+//       location,
+//       images: images || [],
+//       priority: priority || 'Medium',
+//       reportedBy: req.user.id
+//     });
+
+//     await issue.save();
+//     await issue.populate('reportedBy', 'username fullName');
+
+//     res.status(201).json(issue);
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Update an issue
+// router.put('/:id', auth, async (req, res) => {
+//   try {
+//     const { title, description, status, priority, assignedTo } = req.body;
+
+//     const issue = await Issue.findById(req.params.id);
+//     if (!issue) {
+//       return res.status(404).json({ message: 'Issue not found' });
+//     }
+
+//     // Check if user is the reporter or an admin
+//     if (issue.reportedBy.toString() !== req.user.id && req.user.role !== 'admin') {
+//       return res.status(403).json({ message: 'Not authorized' });
+//     }
+
+//     // Update fields
+//     if (title) issue.title = title;
+//     if (description) issue.description = description;
+//     if (status) issue.status = status;
+//     if (priority) issue.priority = priority;
+//     if (assignedTo) issue.assignedTo = assignedTo;
+
+//     await issue.save();
+//     await issue.populate('reportedBy', 'username fullName');
+//     await issue.populate('assignedTo', 'username fullName');
+
+//     res.json(issue);
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Delete an issue
+// router.delete('/:id', auth, async (req, res) => {
+//   try {
+//     const issue = await Issue.findById(req.params.id);
+//     if (!issue) {
+//       return res.status(404).json({ message: 'Issue not found' });
+//     }
+
+//     // Check if user is the reporter or an admin
+//     if (issue.reportedBy.toString() !== req.user.id && req.user.role !== 'admin') {
+//       return res.status(403).json({ message: 'Not authorized' });
+//     }
+
+//     await Issue.findByIdAndDelete(req.params.id);
+//     res.json({ message: 'Issue removed' });
+//   } catch (error) {
+//     console.error(error.message);
+//     if (error.kind === 'ObjectId') {
+//       return res.status(404).json({ message: 'Issue not found' });
+//     }
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Vote for an issue
+// router.post('/:id/vote', auth, async (req, res) => {
+//   try {
+//     const issue = await Issue.findById(req.params.id);
+//     if (!issue) {
+//       return res.status(404).json({ message: 'Issue not found' });
+//     }
+
+//     // In a real application, you might want to track who voted to prevent multiple votes
+//     issue.votes += 1;
+//     await issue.save();
+
+//     res.json({ votes: issue.votes });
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Add a comment to an issue
+// router.post('/:id/comment', [
+//   auth,
+//   body('text').notEmpty().withMessage('Comment text is required')
+// ], async (req, res) => {
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({ errors: errors.array() });
+//     }
+
+//     const issue = await Issue.findById(req.params.id);
+//     if (!issue) {
+//       return res.status(404).json({ message: 'Issue not found' });
+//     }
+
+//     const { text } = req.body;
+
+//     issue.comments.push({
+//       user: req.user.id,
+//       text
+//     });
+
+//     await issue.save();
+//     await issue.populate('comments.user', 'username fullName');
+
+//     res.json(issue.comments);
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Get issues by a specific user
+// router.get('/user/:userId', async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10, status } = req.query;
+    
+//     const filter = { reportedBy: req.params.userId };
+//     if (status) filter.status = status;
+
+//     const issues = await Issue.find(filter)
+//       .populate('reportedBy', 'username fullName')
+//       .sort({ createdAt: -1 })
+//       .limit(limit * 1)
+//       .skip((page - 1) * limit);
+
+//     const total = await Issue.countDocuments(filter);
+
+//     res.json({
+//       issues,
+//       totalPages: Math.ceil(total / limit),
+//       currentPage: page,
+//       total
+//     });
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// // Get dashboard statistics
+// router.get('/stats/dashboard', async (req, res) => {
+//   try {
+//     const totalIssues = await Issue.countDocuments();
+//     const pendingIssues = await Issue.countDocuments({ status: 'Received' });
+//     const inProgressIssues = await Issue.countDocuments({ status: 'In Progress' });
+//     const resolvedIssues = await Issue.countDocuments({ status: 'Resolved' });
+
+//     // Get recent activity (last 10 resolved or updated issues)
+//     const recentActivity = await Issue.find({
+//       $or: [
+//         { status: 'Resolved' },
+//         { updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } // Updated in last 24 hours
+//       ]
+//     })
+//     .sort({ updatedAt: -1 })
+//     .limit(10)
+//     .populate('reportedBy', 'username fullName');
+
+//     res.json({
+//       total: totalIssues,
+//       pending: pendingIssues,
+//       inProgress: inProgressIssues,
+//       resolved: resolvedIssues,
+//       recentActivity
+//     });
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send('Server error');
+//   }
+// });
+
+// module.exports = router;
+const express = require('express');
+const router = express.Router();
+
+// Simple test route without authentication
+router.post('/test', (req, res) => {
+  try {
+    console.log('Received issue data:', req.body);
+    res.json({ 
+      message: 'Issue received successfully', 
+      data: req.body 
+    });
+  } catch (error) {
+    console.error('Error in test route:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get all issues (simple version)
+router.get('/', (req, res) => {
+  try {
+    res.json({ 
+      message: 'This is a test response from issues endpoint',
+      issues: [] 
+    });
+  } catch (error) {
+    console.error('Error getting issues:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+module.exports = router;
