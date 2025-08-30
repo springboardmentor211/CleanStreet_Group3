@@ -11,69 +11,25 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-      {/* Navigation */}
-      <div className="absolute top-0 left-0 right-0 border-b border-white/30 px-4 sm:px-8 py-6">
-        <div className="flex items-center space-x-3 sm:space-x-5">
-          {/* Logo */}
-          <div className="w-[61px] h-[51px] flex items-center justify-center">
-            <svg
-              width="61"
-              height="51"
-              viewBox="0 0 61 51"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-[61px] h-[51px]"
-            >
-              <g clipPath="url(#clip0_150_488)">
-                <mask
-                  id="mask0_150_488"
-                  style={{ maskType: "luminance" }}
-                  maskUnits="userSpaceOnUse"
-                  x="0"
-                  y="0"
-                  width="61"
-                  height="51"
-                >
-                  <path d="M61 0H0V51H61V0Z" fill="white" />
-                </mask>
-                <g mask="url(#mask0_150_488)">
-                  <path
-                    d="M41.2822 11.9531C39.1222 11.9531 36.9634 12.1523 34.8629 12.5508L35.965 3.41162C36.0692 2.54004 35.7267 1.68041 35.0267 1.03295C34.3125 0.373535 33.2998 0 32.2275 0C32.0637 0 31.9148 0.0124512 31.751 0.0249023C21.8027 1.0708 14.2969 8.14307 14.2969 16.4903C14.2969 18.2962 14.5352 20.1012 15.0117 21.8573L4.08057 20.9279H3.99121L3.70766 20.918C2.65028 20.918 1.63699 21.304 0.937638 21.9639C0.223032 22.6512 -0.104617 23.5576 0.0294165 24.4541C1.28039 32.7715 9.73938 39.0469 19.7234 39.0469C21.8834 39.0469 24.0422 38.8477 26.1427 38.4492L25.0406 47.5884C24.9364 48.46 25.2789 49.3196 25.9789 49.967C26.8128 50.7266 28.034 51.1006 29.2552 50.9761C39.2035 49.9302 46.7093 42.8579 46.7093 34.5107C46.7093 32.7047 46.471 30.8998 45.9945 29.1437L56.9256 30.0651H57.015L57.2979 30.0775C58.3553 30.0775 59.3686 29.6916 60.0537 29.0316C60.7834 28.3468 61.111 27.4379 60.977 26.5414C59.7252 18.2285 51.2662 11.9531 41.2822 11.9531ZM40.5436 25.49L41.5711 27.8687C42.4498 29.8858 42.8972 32.127 42.8972 34.5176C42.8972 41.2542 36.821 46.9688 28.8386 47.9151L30.522 33.8901L27.677 34.7492C25.2644 35.4838 22.5837 35.8579 19.7243 35.8579C11.6668 35.8579 4.83175 30.7778 3.69991 24.104L20.4749 25.5115L19.3127 23.1393C18.5502 21.1172 18.0021 18.876 18.0021 16.4853C18.0021 9.76172 24.0342 4.0541 32.0488 3.19746L30.4881 17.1129L33.3332 16.2538C35.7458 15.5191 38.4264 15.1451 41.2858 15.1451C49.3433 15.1451 56.1784 20.2252 57.3102 26.899L40.5436 25.49ZM30.5 23.0197C28.925 23.0197 27.6406 24.0935 27.6406 25.4104C27.6406 26.7272 28.925 27.801 30.5 27.801C32.075 27.801 33.3594 26.7272 33.3594 25.4104C33.3594 24.0935 32.0727 23.0197 30.5 23.0197Z"
-                    fill="#2759C5"
-                  />
-                </g>
-              </g>
-              <defs>
-                <clipPath id="clip0_150_488">
-                  <rect width="61" height="51" rx="25.5" fill="white" />
-                </clipPath>
-              </defs>
-            </svg>
-          </div>
-          <h1 className="text-white text-xl sm:text-2xl font-bold">Clean Street</h1>
-        </div>
-      </div>
+    <div className="min-h-screen text-white flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 ">
 
       {/* Forgot Password Form */}
-      <div className="w-full max-w-[501px] border border-white/30 rounded-cs-button bg-background p-8 shadow-lg">
+      <div className="w-full max-w-[501px] border border-white/10 rounded-2xl bg-[#111827] p-10 shadow-lg">
+
+
         {/* Icon */}
         <div className="text-center mb-8">
           <div className="w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-            <svg
-              width="102"
-              height="102"
-              viewBox="0 0 102 102"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-24 h-24"
-            >
-              <circle cx="51" cy="51" r="51" fill="#FEE2E2" />
-              <path
-                d="M51 30C43.82 30 38 35.82 38 43V47C35.79 47 34 48.79 34 51V69C34 71.21 35.79 73 38 73H64C66.21 73 68 71.21 68 69V51C68 48.79 66.21 47 64 47V43C64 35.82 58.18 30 51 30ZM51 34C56.05 34 60 37.95 60 43V47H42V43C42 37.95 45.95 34 51 34ZM51 57C53.21 57 55 58.79 55 61C55 63.21 53.21 65 51 65C48.79 65 47 63.21 47 61C47 58.79 48.79 57 51 57Z"
-                fill="#DC2626"
-              />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="103" height="104" fill="none" viewBox="0 0 103 104">
+  <path fill="url(#a)" d="M0 .918h102.164v102.164H0z"/>
+  <defs>
+    <pattern id="a" width="1" height="1" patternContentUnits="objectBoundingBox">
+      <use href="#b" transform="scale(.01563)"/>
+    </pattern>
+    <image id="b" width="64" height="64" data-name="problem.png" href="data:image/png;base64,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" preserveAspectRatio="none"/>
+  </defs>
+</svg>
+
           </div>
           <h1 className="text-white text-3xl sm:text-[42px] font-bold mb-4">
             Forgot Password

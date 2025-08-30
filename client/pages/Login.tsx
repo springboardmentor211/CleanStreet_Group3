@@ -18,15 +18,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col">
-    
+    <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col">
 
-
+   
       {/* ✅ Centered login form */}
       <div className="flex flex-1 items-center justify-center">
         <form
           onSubmit={handleLogin}
-          className="bg-cs-blue-secondary p-8 rounded-2xl shadow-lg w-96 border border-white/20"
+         className="bg-[#111827] p-10 rounded-2xl shadow-lg w-[380px] border border-white/10"
+
         >
           {/* Logo inside card */}
           <div className="flex justify-center mb-4">
@@ -66,8 +66,8 @@ export default function Login() {
           </div>
 
           <h2 className="text-2xl font-bold text-center mb-2">Clean Street</h2>
-          <p className="text-center text-white/70 mb-6">
-            Enter your credentials to sign in
+         <p className="text-center text-white/60 mb-6">
+            Enter your credentials to Sign In
           </p>
 
           {/* Email */}
@@ -115,12 +115,16 @@ export default function Login() {
           </button>
 
           {/* Register */}
-          <p className="mt-4 text-center text-sm text-blue-400 cursor-pointer">
-            Don’t have an account?{" "}
-            <span onClick={() => navigate("/register")} className="underline">
-              Register
-            </span>
-          </p>
+          <p className="mt-4 text-center text-sm text-white">
+  Don’t have an account?{" "}
+  <span
+    onClick={() => navigate("/register")}
+    className="text-blue-400 underline cursor-pointer"
+  >
+    Register
+  </span>
+</p>
+
         </form>
       </div>
     </div>
