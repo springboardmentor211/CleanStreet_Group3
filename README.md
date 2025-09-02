@@ -18,6 +18,7 @@ npm start        # Start backend server
 node test.js     # Run this for test backend part
 
 
-clean-street/client
+cd client
 
 npm run dev      # for run frontend part
+
