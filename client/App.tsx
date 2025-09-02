@@ -9,7 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth-context";
 
 import Welcome from "./pages/Welcome";
-import Explore from "./pages/explore";
+import Explore from "./pages/Explore";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -19,6 +19,7 @@ import Profile from "./pages/Profile";
 
 
 import NotFound from "./pages/NotFound";
+
 
 const queryClient = new QueryClient();
 
@@ -33,10 +34,10 @@ const App = () => (
           {/* ✅ Make Welcome page the default */}
           
 
-  <Route path="/" element={<Welcome />} />
-   <Route path="/welcome" element={<Welcome />} />
-  <Route path="/explore" element={<Explore />} />
-  {/* other routes */}
+          <Route path="/" element={<Welcome />} />
+          <Route path="/welcome" element={<Welcome />} />
+          <Route path="/explore" element={<Explore />} />
+          {/* other routes */}
 
 
           {/* Auth */}

@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+h1.text-4xl.sm\:text-6xl.font-extrabold.mb-6 {
+    font-size: 6.5rem !important;
+    line-height: 1.2 !important;
+}
+
+
+
 @layer base {
   /**
    * Clean Street design system
