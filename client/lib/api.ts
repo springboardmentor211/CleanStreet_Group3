@@ -1,4 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Ensure the API base URL doesn't end with a slash
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+
+interface ApiResponse<T = any> {
+  success?: boolean;
+  message?: string;
+  token?: string;
+  data?: T;
+  [key: string]: any;
+}
+
+interface ErrorResponse extends Error {
+  status?: number;
+  data?: any;
+}
 
 // Auth token management
 const getAuthToken = () => localStorage.getItem('authToken');
@@ -6,41 +20,71 @@ const setAuthToken = (token: string) => localStorage.setItem('authToken', token)
 const removeAuthToken = () => localStorage.removeItem('authToken');
 
 // API request helper
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+const apiRequest = async <T = any>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
   const token = getAuthToken();
   
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Network error' }));
-    throw new Error(error.message || `HTTP ${response.status}`);
-  }
+  try {
+    const fetchConfig: RequestInit = {
+      ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(config.headers || {})
+      }
+    };
 
-  return response.json();
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchConfig);
+    
+    let data: ApiResponse<T> = {};
+    try {
+      data = await response.json() as ApiResponse<T>;
+    } catch (e) {
+      console.warn('Failed to parse JSON response', e);
+    }
+    
+    if (!response.ok) {
+      const errorMessage = data?.message || `HTTP ${response.status} ${response.statusText}`;
+      const error = new Error(errorMessage) as ErrorResponse;
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    return data as ApiResponse<T>;
+  } catch (error) {
+    console.error(`API Request Error [${endpoint}]:`, error);
+    throw error;
+  }
 };
 
 // Auth API
 export const authAPI = {
-  login: async (email: string, password: string) => {
-    const response = await apiRequest('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    
-    if (response.token) {
-      setAuthToken(response.token);
+  login: async (email: string, password: string): Promise<{ token?: string; user?: any }> => {
+    try {
+      const response = await apiRequest<{ token: string; user: any }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (response.token) {
+        setAuthToken(response.token);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    
-    return response;
   },
 
   register: async (userData: {
@@ -49,25 +93,31 @@ export const authAPI = {
     password: string;
     fullName: string;
     phoneNumber?: string;
-  }) => {
-    const response = await apiRequest('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-    
-    if (response.token) {
-      setAuthToken(response.token);
+  }): Promise<{ token?: string; user?: any }> => {
+    try {
+      const response = await apiRequest<{ token: string; user: any }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+      
+      if (response.token) {
+        setAuthToken(response.token);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     }
-    
-    return response;
   },
 
-  logout: () => {
+  logout: (): void => {
     removeAuthToken();
   },
 
-  getCurrentUser: async () => {
-    return apiRequest('/auth/me');
+  getCurrentUser: async (): Promise<any> => {
+    const response = await apiRequest<{ user: any }>('/auth/me');
+    return response.data?.user;
   },
 
   updateProfile: async (profileData: {
@@ -75,25 +125,40 @@ export const authAPI = {
     phoneNumber?: string;
     location?: string;
     bio?: string;
-  }) => {
-    return apiRequest('/auth/update-profile', {
+  }): Promise<any> => {
+    const response = await apiRequest<{ user: any }>('/auth/update-profile', {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
+    return response.data?.user;
   },
 
-  forgotPassword: async (email: string) => {
-    return apiRequest('/auth/forgot-password', {
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await apiRequest<{ message: string }>('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to send password reset email');
+    }
+    return { message: response.message || 'Password reset email sent successfully' };
   },
 
-  resetPassword: async (token: string, newPassword: string) => {
-    return apiRequest('/auth/reset-password', {
+  resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await apiRequest<{ message: string }>('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ token, newPassword }),
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to reset password');
+    }
+    return { message: response.message || 'Password reset successful' };
   },
 };
 
@@ -107,17 +172,15 @@ export const issuesAPI = {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryParams.append(key, value.toString());
-        }
-      });
-    }
-    
-    const queryString = queryParams.toString();
-    return apiRequest(`/issues${queryString ? `?${queryString}` : ''}`);
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.status) query.append('status', params.status);
+    if (params?.category) query.append('category', params.category);
+    if (params?.sortBy) query.append('sortBy', params.sortBy);
+    if (params?.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    return apiRequest(`/issues?${query.toString()}`);
   },
 
   getById: async (id: string) => {
@@ -168,7 +231,7 @@ export const issuesAPI = {
   },
 
   addComment: async (id: string, text: string) => {
-    return apiRequest(`/issues/${id}/comment`, {
+    return apiRequest(`/issues/${id}/comments`, {
       method: 'POST',
       body: JSON.stringify({ text }),
     });
@@ -179,21 +242,16 @@ export const issuesAPI = {
     limit?: number;
     status?: string;
   }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryParams.append(key, value.toString());
-        }
-      });
-    }
-    
-    const queryString = queryParams.toString();
-    return apiRequest(`/issues/user/${userId}${queryString ? `?${queryString}` : ''}`);
+    const query = new URLSearchParams({ userId });
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.status) query.append('status', params.status);
+
+    return apiRequest(`/issues/user?${query.toString()}`);
   },
 
   getDashboardStats: async () => {
-    return apiRequest('/issues/stats/dashboard');
+    return apiRequest('/issues/stats');
   },
 };
 

@@ -14,13 +14,39 @@ export default function Login() {
     setLoading(true);
     setError("");
 
+    // Basic validation
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await authAPI.login(email, password);
       console.log("Login successful:", response);
-      navigate("/dashboard");
+      
+      // Store the token if it's in the response
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
+      }
+      
+      // Redirect to dashboard or intended URL
+      const from = new URLSearchParams(window.location.search).get('from') || '/dashboard';
+      navigate(from);
+      
     } catch (err: any) {
-      setError(err.message || "Login failed");
       console.error("Login error:", err);
+      
+      // Handle different types of errors
+      if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+        setError("Unable to connect to the server. Please check your internet connection.");
+      } else if (err.message.includes('401') || err.message.includes('Invalid credentials')) {
+        setError("Invalid email or password. Please try again.");
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
