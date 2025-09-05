@@ -36,12 +36,15 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col">
+    {/* ✅ Centered login form */}
+      <div className="flex flex-1 items-center justify-center">
       <form
         onSubmit={handleRegister}
-        className="bg-cs-blue-secondary p-8 rounded-lg shadow-lg w-96 border border-white/20"
+        className="bg-[#111827] p-10 rounded-2xl shadow-lg w-[380px] border border-white/10"
       >
         <h2 className="text-2xl font-bold mb-6 text-center text-white">Register</h2>
+        
 
         {/* Error Message */}
         {error && (
@@ -50,6 +53,8 @@ export default function Register() {
           </div>
         )}
 
+         <div className="mb-4">
+        <label className="block text-sm mb-1 text-white/70">Username</label>
         <input
           type="text"
           placeholder="Username"
@@ -58,16 +63,22 @@ export default function Register() {
           onChange={(e) => setUsername(e.target.value)}
           required
         />
+       </div>
 
+       <div className="mb-4">
+        <label className="block text-sm mb-1 text-white/70">Name</label>
         <input
           type="text"
-          placeholder="Full Name"
-          className="w-full p-2 mb-4 border rounded bg-background text-white placeholder:text-white/70 border-white/30"
+          placeholder="Enter your full name"
+          className="w-full p-2 border rounded-lg bg-background text-white border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           required
         />
+        </div>
 
+        <div className="mb-4">
+        <label className="block text-sm mb-1 text-white/70">Email</label>
         <input
           type="email"
           placeholder="Email"
@@ -76,7 +87,10 @@ export default function Register() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+        </div>
 
+        <div className="mb-4">
+        <label className="block text-sm mb-1 text-white/70">Phone Number(optional)</label>
         <input
           type="tel"
           placeholder="Phone Number (optional)"
@@ -84,16 +98,20 @@ export default function Register() {
           value={phoneNumber}
           onChange={(e) => setPhoneNumber(e.target.value)}
         />
+        </div>
 
+        <div className="mb-4">
+        <label className="block text-sm mb-1 text-white/70">Password</label>
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Create a password"
           className="w-full p-2 mb-4 border rounded bg-background text-white placeholder:text-white/70 border-white/30"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-
+        </div>
+        <div className="mb-4">
         <button
           type="submit"
           disabled={loading}
@@ -101,6 +119,7 @@ export default function Register() {
         >
           {loading ? "Creating Account..." : "Sign Up"}
         </button>
+        </div>
 
         <p
           className="mt-4 text-center text-blue-600 cursor-pointer"
@@ -110,5 +129,7 @@ export default function Register() {
         </p>
       </form>
     </div>
+  </div>
+  
   );
 }
