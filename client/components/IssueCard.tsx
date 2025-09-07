@@ -93,8 +93,8 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
             onClick={() => onVote(issue.id, "up")}
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
           >
-            <ThumbsUp className="w-12 h-12 text-white" />
-            <span className="text-white text-2xl sm:text-4xl font-bold">{issue.upvotes}</span>
+            <ThumbsUp className="w-5 h-5 text-white" />
+            <span className="text-white text-2xl font-bold">{issue.upvotes}</span>
           </button>
 
           {/* Downvotes */}
@@ -102,15 +102,15 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
             onClick={() => onVote(issue.id, "down")}
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
           >
-            <ThumbsDown className="w-16 h-16 text-white" />
-            <span className="text-white text-2xl sm:text-4xl font-bold">{issue.downvotes}</span>
+            <ThumbsDown className="w-5 h-5 text-white" />
+            <span className="text-white text-2xl  font-bold">{issue.downvotes}</span>
           </button>
         </div>
 
         {/* Comments */}
         <div className="flex items-center space-x-3">
-          <MessageCircle className="w-8 h-8 text-white" />
-          <span className="text-white text-xl sm:text-[35px] font-normal">
+          <MessageCircle className="w-5 h-5 text-white" />
+          <span className="text-white text-xl sm:text-[23px] font-normal">
             Comments ({issue.comments})
           </span>
         </div>

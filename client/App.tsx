@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import CommunityReports from "./pages/CommunityReports";
 import ForgotPassword from "./pages/ForgotPassword";
 import Profile from "./pages/Profile";
+import Report from "./pages/Report";
 
 
 import NotFound from "./pages/NotFound";
@@ -47,7 +48,7 @@ const App = () => (
 
           {/* Main app pages */}
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/reports" element={<CommunityReports />} />
+          <Route path="/report" element={<Report />} />
           <Route path="/complaints" element={<CommunityReports />} />
 
           <Route path="/profile" element={<Profile />} />
