@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "@/lib/api";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -8,6 +9,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { login, isAuthenticated, loginSuccess, loginError } = useAuth();
+  // Redirect to profile if already authenticated
+  if (isAuthenticated) {
+    navigate("/profile");
+    return null;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,42 +29,18 @@ export default function Login() {
     }
 
     try {
-      const response = await authAPI.login(email, password);
-      console.log("Login successful:", response);
-      
-      // Store the token if it's in the response
-      if (response.token) {
-        localStorage.setItem('authToken', response.token);
-      }
-      
-      // Redirect to dashboard or intended URL
-      const from = new URLSearchParams(window.location.search).get('from') || '/dashboard';
-      navigate(from);
-      
+      await login(email, password);
+      // Navigation handled by effect above
     } catch (err: any) {
       console.error("Login error:", err);
-      
-      // Handle different types of errors
-      if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
-        setError("Unable to connect to the server. Please check your internet connection.");
-      } else if (err.message.includes('401') || err.message.includes('Invalid credentials')) {
-        setError("Invalid email or password. Please try again.");
-      } else if (err.message) {
-        setError(err.message);
-      } else {
-        setError("An unexpected error occurred. Please try again later.");
-      }
+      if (err.message) setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-       <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col">
-
-    
-
-
+      <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col">
       {/* ✅ Centered login form */}
       <div className="flex flex-1 items-center justify-center">
         <form
@@ -106,9 +89,9 @@ export default function Login() {
           </p>
 
           {/* Error Message */}
-          {error && (
+          {(error || loginError) && (
             <div className="bg-red-500/20 border border-red-500 text-red-300 p-3 rounded mb-4">
-              {error}
+              {error || loginError}
             </div>
           )}
 
@@ -159,14 +142,14 @@ export default function Login() {
 
           {/* Register */}
            <p className="mt-4 text-center text-sm text-white">
-  Don’t have an account?{" "}
-  <span
-    onClick={() => navigate("/register")}
-    className="text-blue-400 underline cursor-pointer"
-  >
-    Register
-  </span>
-</p>
+            Don’t have an account?{" "}
+            <span
+              onClick={() => navigate("/register")}
+              className="text-blue-400 underline cursor-pointer"
+            >
+              Register
+            </span>
+          </p>
         </form>
       </div>
     </div>

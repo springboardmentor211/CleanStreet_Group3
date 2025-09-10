@@ -8,7 +8,7 @@ export default function HowWeWork() {
         <div className="w-full bg-background">
           {/* Navigation */}
          
-    <div className="min-h-screen bg-[#0d1117] text-white flex flex-col items-center px-6 py-12">
+    <div className=" bg-[#0d1117] text-white flex flex-col items-center px-6 py-10">
       {/* Title */}
       <h1 className="text-5xl font-extrabold mb-4 text-center">How We Work</h1>
       <p className="text-xl text-gray-400 max-w-2xl text-center mb-12">

@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
 import { ArrowRight, Users, MapPin, CheckCircle } from "lucide-react";
 import { useEffect } from "react";
+import Explore from "./Explore";
 
 export default function Welcome() {
+  const { isAuthenticated } = useAuth();
   useEffect(() => {
     window.scrollTo(0, 0); // Reset scroll on page load
   }, []);
@@ -62,20 +65,31 @@ export default function Welcome() {
             </h1>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons or Dashboard Button */}
           <div className="flex items-center space-x-4">
-            <Link
-              to="/login"
-              className="text-white hover:text-cs-blue-light transition-colors px-4 py-2"
-            >
-              Login
-            </Link>
-            <Link
-              to="/register"
-              className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
-            >
-              Register
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-white hover:text-cs-blue-light transition-colors px-4 py-2"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -95,29 +109,36 @@ export default function Welcome() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-16">
-            <Link
-              to="/register"
-              className="flex items-center space-x-2 bg-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:bg-cs-blue-primary transition-colors"
-            >
-              <span>Start Reporting Issues</span>
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link
-              to="/reports"
-              className="flex items-center space-x-2 border border-white/30 text-white px-8 py-4 rounded-cs-button text-lg hover:bg-white/5 transition-colors"
-            >
-              <span>View Community Reports</span>
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="flex items-center space-x-2 bg-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:bg-cs-blue-primary transition-colors"
+              >
+                <span>Go to Dashboard</span>
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/register"
+                  className="flex items-center space-x-2 bg-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:bg-cs-blue-primary transition-colors"
+                >
+                  <span>Start Reporting Issues</span>
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  to="/reports"
+                  className="flex items-center space-x-2 border border-white/30 text-white px-8 py-4 rounded-cs-button text-lg hover:bg-white/5 transition-colors"
+                >
+                  <span>View Community Reports</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
         {/* Scroll Button */}
-        <Link
-        to="/explore"
-        className="px-6 py-3 rounded-2xl bg-primary text-white font-medium shadow hover:bg-primary/90 transition"
-      >
-        Scroll to Explore
-      </Link>
+        <Explore/>
       </section>
 
     
