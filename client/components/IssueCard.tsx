@@ -5,12 +5,14 @@ export interface Issue {
   title: string;
   description: string;
   location: string;
-  timeAgo: string;
+  timeAgo?: string; // optional, deprecated
+  createdAt: string; // ISO string or date string
   status: "received" | "in_progress" | "resolved";
   upvotes: number;
   downvotes: number;
   comments: number;
   icon: string;
+  address?: string;
 }
 
 interface IssueCardProps {
@@ -42,6 +44,15 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
     text: "text-white",
     label: issue.status || "Received"
   };
+
+  // Helper to format createdAt as hh:mm (24-hour)
+  function formatToHHMM(createdAt: string): string {
+    const date = new Date(createdAt);
+    if (isNaN(date.getTime())) return createdAt;
+    const hh = date.getHours().toString().padStart(2, "0");
+    const mm = date.getMinutes().toString().padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
 
   return (
     <div className="w-full max-w-[640px] border border-white/30 rounded-cs-card bg-background p-4 sm:p-6">
@@ -78,11 +89,11 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 space-y-2 sm:space-y-0">
         <div className="flex items-center space-x-3">
           <MapPin className="w-7 h-7 text-white" />
-          <span className="text-white text-lg sm:text-xl">{issue.location}</span>
+          <span className="text-white text-lg sm:text-xl">{issue.address}</span>
         </div>
         <div className="flex items-center space-x-3">
           <Clock className="w-7 h-7 text-white" />
-          <span className="text-white text-lg sm:text-xl">{issue.timeAgo}</span>
+          <span className="text-white text-lg sm:text-xl">{formatToHHMM(issue.createdAt)}</span>
         </div>
       </div>
 

@@ -16,7 +16,7 @@ export function Layout({ children }: LayoutProps) {
     navigate("/");
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path:string) => location.pathname.startsWith(path);
   const isWelcomeOrExplore =
     location.pathname === "/" ||
     location.pathname === "/welcome" ||
@@ -93,7 +93,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link
                   to="/dashboard"
                   className={`text-base ${
-                    isActive("/dashboard") || isActive("/")
+                    isActive("/dashboard")
                       ? "text-cs-blue-secondary"
                       : "text-white"
                   } hover:text-cs-blue-secondary transition-colors`}
@@ -113,7 +113,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link
                   to="/complaints"
                   className={`text-base ${
-                    isActive("/complaints")
+                    (isActive("/complaints") || isActive("/issues"))
                       ? "text-cs-blue-secondary"
                       : "text-white"
                   } hover:text-cs-blue-secondary transition-colors`}

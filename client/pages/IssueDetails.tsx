@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { ThumbsUp, ThumbsDown, MessageCircle, MapPin, Clock } from "lucide-react";
@@ -6,6 +7,7 @@ import { issuesAPI } from "@/lib/api";
 
 export default function IssueDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
@@ -81,8 +83,15 @@ export default function IssueDetails() {
       <div className="max-w-2xl mx-auto bg-background rounded-xl p-8 mt-8 shadow-lg border border-white/10">
         <h1 className="text-3xl font-bold text-white mb-4">{issue.title}</h1>
         <div className="flex items-center gap-4 mb-4">
-          <MapPin className="w-6 h-6 text-white" />
-          <span className="text-white text-lg">{typeof issue.location === "object" ? `(${issue.location.coordinates?.[1]}, ${issue.location.coordinates?.[0]})` : issue.location}</span>
+          <button
+            type="button"
+            className="flex items-center gap-2 focus:outline-none"
+            onClick={() => navigate('/maps')}
+            style={{ background: "none", border: "none", padding: 0, margin: 0, cursor: "pointer" }}
+          >
+            <MapPin className="w-6 h-6 text-white" />
+            <span className="text-white text-lg underline">{issue.address}</span>
+          </button>
           <Clock className="w-6 h-6 text-white ml-4" />
           <span className="text-white text-lg">{issue.createdAt ? new Date(issue.createdAt).toLocaleString() : ""}</span>
         </div>
