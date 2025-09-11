@@ -49,9 +49,14 @@ const auth = async (req, res, next) => {
     console.log('Auth middleware called');
     console.log('Headers:', req.headers);
     
-    // Get token from header
-    const token = req.header('x-auth-token');
+    const authHeader = req.header('authorization');
+    let token;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1]; // Get only the token part
+    }
     console.log('Token received:', token);
+    
 
     // Check if no token
     if (!token) {

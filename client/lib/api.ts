@@ -44,6 +44,7 @@ const apiRequest = async <T = any>(endpoint: string, options: RequestInit = {}):
     };
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchConfig);
+    console.log(`API Request [${endpoint}] Response:`, response);
     
     let data: ApiResponse<T> = {};
     try {
@@ -251,7 +252,7 @@ export const issuesAPI = {
   },
 
   getDashboardStats: async () => {
-    return apiRequest('/issues/stats');
+    return apiRequest('/issues/stats/dashboard');
   },
 };
 

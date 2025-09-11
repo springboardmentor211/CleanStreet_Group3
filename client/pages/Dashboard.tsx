@@ -1,4 +1,6 @@
 import { Layout } from "@/components/Layout";
+import { useEffect, useState } from "react";
+import { issuesAPI } from "@/lib/api";
 import { 
   FileText, 
   Clock, 
@@ -8,6 +10,7 @@ import {
   Eye, 
   Map
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface StatCardProps {
   title: string;
@@ -75,30 +78,57 @@ function ActivityItem({ title, time }: ActivityItemProps) {
 }
 
 export default function Dashboard() {
+  const [metrics, setMetrics] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    resolved: 0,
+    recentActivity: [],
+  });
+
+  useEffect(() => {
+    async function fetchDashboardStats() {
+      try {
+        const res = await issuesAPI.getDashboardStats();
+        setMetrics({
+          total: res.total || 0,
+          pending: res.pending || 0,
+          inProgress: res.inProgress || 0,
+          resolved: res.resolved || 0,
+          recentActivity: Array.isArray(res.recentActivity) ? res.recentActivity : [],
+        });
+        console.log("Fetched Dashboard Metrics:", res);
+      } catch (err) {
+        console.error("Dashboard metrics error:", err);
+      }
+    }
+    fetchDashboardStats();
+  }, []);
+
   const stats = [
     {
       title: "Total Issues",
-      value: 5,
+      value: metrics.total,
       icon: <FileText className="w-[35px] h-[35px] text-white" />
     },
     {
       title: "Pending", 
-      value: 2,
+      value: metrics.pending,
       icon: <Clock className="w-[35px] h-[35px] text-white" />
     },
     {
       title: "In Progress",
-      value: 1, 
+      value: metrics.inProgress, 
       icon: <RefreshCw className="w-[35px] h-[35px] text-white" />
     },
     {
       title: "Resolved",
-      value: 2,
+      value: metrics.resolved,
       icon: <CheckCircle className="w-[35px] h-[35px] text-white" />
     }
   ];
 
-  const recentActivity = [
+  const defaultActivity = [
     {
       title: "Pothole on Main Street resolved",
       time: "2 hours ago"
@@ -113,16 +143,24 @@ export default function Dashboard() {
     }
   ];
 
+  const recentActivity = metrics.recentActivity && Array.isArray(metrics.recentActivity)
+    ? metrics.recentActivity
+    : defaultActivity;
+  
+  console.log("Recent Activities: ",recentActivity);
+
+  const navigate = useNavigate();
+
   const handleReportIssue = () => {
-    console.log("Navigate to report issue");
+    navigate("/report");
   };
 
   const handleViewComplaints = () => {
-    console.log("Navigate to view complaints");
+    navigate("/complaints");
   };
 
   const handleIssueMap = () => {
-    console.log("Navigate to issue map");
+    navigate("/maps");
   };
 
   return (
@@ -155,19 +193,24 @@ export default function Dashboard() {
             <div className="border border-white/30 rounded-cs-card bg-background p-6 min-h-[387px]">
               {/* Add Button */}
               <div className="flex items-center mb-6">
-                <div className="w-12 h-12 rounded-full bg-cs-blue-primary flex items-center justify-center">
+                <button
+                  className="w-12 h-12 rounded-full bg-cs-blue-primary flex items-center justify-center focus:outline-none"
+                  onClick={handleReportIssue}
+                  title="Report New Issue"
+                >
                   <Plus className="w-7 h-7 text-white" />
-                </div>
+                </button>
               </div>
 
               {/* Activity List */}
               <div className="space-y-0">
                 {recentActivity.map((activity, index) => (
-                  <ActivityItem
-                    key={index}
-                    title={activity.title}
-                    time={activity.time}
-                  />
+                  <div key={index} className="border-b border-white/30 last:border-b-0 py-6">
+                    <div className="text-white text-[32px] font-light mb-2">
+                      {activity.title}
+                    </div>
+                    
+                  </div>
                 ))}
               </div>
             </div>

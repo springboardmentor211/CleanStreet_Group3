@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     console.log('Login response:', response);
     if (response.token && response.user) {
       window.localStorage.setItem('authToken', response.token);
+      window.localStorage.setItem('currentUser', JSON.stringify(response.user));
       setToken(response.token);
       setUser(response.user);
       setUserInfo(response.user);

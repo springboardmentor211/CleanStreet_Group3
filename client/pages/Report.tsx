@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -28,22 +28,20 @@ import { Upload, Camera, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {Layout} from "@/components/Layout"; // Use the same layout as other pages
 
+import MiniMap from "../components/MiniMap";
 const issueTypeEnum = [
-  "potholes",
-  "broken-streetlight",
-  "illegal-dumping",
-  "graffiti",
-  "damaged-signage",
-  "tree-branch-issues",
-  "water-leak",
-  "other",
+  "Pothole",
+  "Garbage",
+  "Streetlight",
+  "Water",
+  "Other",
 ] as const;
 
-const priorityEnum = ["low", "medium", "high", "emergency"] as const;
+const priorityEnum = ["Low", "Medium", "High", "Critical"] as const;
 
 const formSchema = z.object({
   issueTitle: z.string().min(1, "Issue title is required"),
-  issueType: z.enum(issueTypeEnum, { errorMap: () => ({ message: "Issue type is required" }) }),
+  category: z.enum(issueTypeEnum, { errorMap: () => ({ message: "Category is required" }) }),
   priorityLevel: z.enum(priorityEnum, { errorMap: () => ({ message: "Priority level is required" }) }),
   address: z.string().min(1, "Address is required"),
   nearbyLandmark: z.string().optional(),
@@ -65,7 +63,7 @@ const ReportIssue = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       issueTitle: "",
-      issueType: undefined,
+      category: undefined,
       priorityLevel: undefined,
       address: "",
       nearbyLandmark: "",
@@ -78,12 +76,14 @@ const ReportIssue = () => {
     lng: number;
     address: string;
   }) => {
-    setSelectedLocation(location);
-    form.setValue("address", location.address);
+  console.log("Location selected:", location);
+  setSelectedLocation(location);
+  form.setValue("address", location.address);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    console.log("Files selected:", files);
     const validFiles = files.filter(file => {
       const isValidType = file.type.startsWith("image/");
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
@@ -94,6 +94,7 @@ const ReportIssue = () => {
     setUploadedFiles(prev => [...prev, ...validFiles]);
     if (validFiles.length)
       toast.success(`${validFiles.length} file(s) uploaded successfully!`);
+    console.log("Valid files:", validFiles);
   };
 
   const removeFile = (index: number) => {
@@ -102,30 +103,39 @@ const ReportIssue = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
+      console.log("Form data before submit:", data);
       const formData = new FormData();
       formData.append("title", data.issueTitle);
-      formData.append("type", data.issueType);
-      formData.append("priority", data.priorityLevel);
-      formData.append("address", data.address);
-      if (data.nearbyLandmark) formData.append("landmark", data.nearbyLandmark);
+      formData.append("category", data.category);
+      formData.append("priority", data.priorityLevel); // backend expects 'priority'
       formData.append("description", data.description);
-
+      formData.append("address", data.address); // address as top-level field
+      // location GeoJSON object (no address inside)
       if (selectedLocation) {
-        formData.append("latitude", selectedLocation.lat.toString());
-        formData.append("longitude", selectedLocation.lng.toString());
+        const locationGeo = { type: "Point", coordinates: [selectedLocation.lng, selectedLocation.lat] };
+        console.log("Location GeoJSON to send:", locationGeo);
+        formData.append("location", JSON.stringify(locationGeo));
+      }
+      uploadedFiles.forEach(file => {
+        formData.append("images", file);
+      });
+      console.log("FormData to send:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
       }
 
-      uploadedFiles.forEach(file => {
-        formData.append("files", file);
-      });
-
+      const token = window.localStorage.getItem("authToken");
+      console.log("Submitting with token:", token);
       const res = await fetch("http://localhost:5000/api/issues", {
         method: "POST",
         body: formData,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
+      console.log("Response status:", res.status);
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
+        console.error("Error response from backend:", errorData);
         throw new Error(errorData.message || "Failed to submit issue");
       }
 
@@ -135,27 +145,24 @@ const ReportIssue = () => {
       setUploadedFiles([]);
       setFileInputKey(prev => prev + 1);
     } catch (err: any) {
-      console.error(err);
+      console.error("Submission error:", err);
       toast.error(err.message || "Error reporting issue. Please try again.");
     }
   };
 
   const issueTypes = [
-    { label: "Potholes", value: "potholes" },
-    { label: "Broken Streetlight", value: "broken-streetlight" },
-    { label: "Illegal Dumping", value: "illegal-dumping" },
-    { label: "Graffiti", value: "graffiti" },
-    { label: "Damaged Signage", value: "damaged-signage" },
-    { label: "Tree/Branch Issues", value: "tree-branch-issues" },
-    { label: "Water Leak", value: "water-leak" },
-    { label: "Other", value: "other" },
+    { label: "Pothole", value: "Pothole" },
+    { label: "Garbage", value: "Garbage" },
+    { label: "Streetlight", value: "Streetlight" },
+    { label: "Water", value: "Water" },
+    { label: "Other", value: "Other" },
   ];
 
   const priorityLevels = [
-    { value: "low", label: "Low Priority" },
-    { value: "medium", label: "Medium Priority" },
-    { value: "high", label: "High Priority" },
-    { value: "emergency", label: "Emergency" },
+    { value: "Low", label: "Low Priority" },
+    { value: "Medium", label: "Medium Priority" },
+    { value: "High", label: "High Priority" },
+    { value: "Critical", label: "Critical" },
   ];
 
   return (
@@ -200,13 +207,13 @@ const ReportIssue = () => {
                     )}
                   />
 
-                  {/* Type */}
+                  {/* Category */}
                   <FormField
                     control={form.control}
-                    name="issueType"
+                    name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Issue Type</FormLabel>
+                        <FormLabel>Category</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -214,7 +221,7 @@ const ReportIssue = () => {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select issue type" />
+                              <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -394,7 +401,12 @@ const ReportIssue = () => {
                 <CardTitle>Location on Map</CardTitle>
               </CardHeader>
               <CardContent>
-                <MapComponent onLocationSelect={handleLocationSelect} />
+                <MiniMap onLocationSelect={handleLocationSelect} />
+                {selectedLocation && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Selected: Lat {selectedLocation.lat}, Lng {selectedLocation.lng}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const Issue = require('../models/Issue');
 const User = require('../models/User');
 const router = express.Router();
@@ -72,25 +73,43 @@ router.get('/:id', async (req, res) => {
 // Create a new issue
 router.post('/', [
   auth,
+  upload.array('images', 8), // Accept up to 8 images
   body('title').notEmpty().withMessage('Title is required'),
   body('description').notEmpty().withMessage('Description is required'),
   body('category').isIn(['Pothole', 'Garbage', 'Streetlight', 'Water', 'Other']).withMessage('Invalid category'),
-  body('location.address').notEmpty().withMessage('Location address is required')
+  body('address').notEmpty().withMessage('Address is required')
 ], async (req, res) => {
   try {
+    console.log(req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { title, description, category, location, images, priority } = req.body;
+    let { title, description, category, location, priority } = req.body;
+
+    // Parse location if it's a string
+    if (location && typeof location === 'string') {
+      try {
+        location = JSON.parse(location);
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid location format' });
+      }
+    }
+
+    // Extract image file paths from req.files
+    let images = [];
+    if (req.files && req.files.length > 0) {
+      images = req.files.map(file => file.path);
+    }
 
     const issue = new Issue({
       title,
       description,
       category,
+      address: req.body.address,
       location,
-      images: images || [],
+      images,
       priority: priority || 'Medium',
       reportedBy: req.user.id
     });
@@ -254,7 +273,7 @@ router.get('/stats/dashboard', async (req, res) => {
     const recentActivity = await Issue.find({
       $or: [
         { status: 'Resolved' },
-        { updatedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } // Updated in last 24 hours
+        { updatedAt: { $gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } }
       ]
     })
     .sort({ updatedAt: -1 })
