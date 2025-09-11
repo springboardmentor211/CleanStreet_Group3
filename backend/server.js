@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -26,15 +27,14 @@ app.use(limiter);
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allowed frontend origins (add your frontend port here)
     const allowedOrigins = [
+      'http://localhost:8080', // Your frontend port
       'http://localhost:3000',
-      'http://localhost:8080',
       process.env.FRONTEND_URL
     ].filter(Boolean);
-    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
@@ -47,9 +47,18 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-// Handle preflight requests
 app.options('*', cors(corsOptions));
+
+// Set CORS headers for static image files (fix NotSameOrigin for images)
+app.use('/uploads/images', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
+
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

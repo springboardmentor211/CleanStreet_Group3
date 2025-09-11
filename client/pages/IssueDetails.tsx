@@ -96,6 +96,29 @@ export default function IssueDetails() {
           <span className="text-white text-lg">{issue.createdAt ? new Date(issue.createdAt).toLocaleString() : ""}</span>
         </div>
         <div className="mb-6 text-white/90 text-lg">{issue.description}</div>
+          {/* Image Gallery */}
+          {Array.isArray(issue.images) && issue.images.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-white mb-2">Attached Images</h2>
+              <div className="flex gap-4 flex-wrap">
+                {issue.images.map((imgPath, idx) => (
+                  <a
+                    key={idx}
+                    href={`http://localhost:5000/${imgPath.replace(/\\/g, '/')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <img
+                      src={`http://localhost:5000/${imgPath.replace(/\\/g, '/')}`}
+                      alt={`Issue image ${idx + 1}`}
+                      className="w-40 h-40 object-cover rounded-lg border border-white/20 hover:scale-105 transition-transform shadow"
+                    />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         <div className="flex gap-6 mb-8">
           <button
             onClick={() => handleVote("up")}
