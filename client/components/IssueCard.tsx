@@ -37,7 +37,11 @@ const statusConfig = {
 };
 
 export function IssueCard({ issue, onVote }: IssueCardProps) {
-  const statusStyle = statusConfig[issue.status];
+  const statusStyle = statusConfig[issue.status] || {
+    bg: "bg-cs-blue-primary",
+    text: "text-white",
+    label: issue.status || "Received"
+  };
 
   return (
     <div className="w-full max-w-[640px] border border-white/30 rounded-cs-card bg-background p-4 sm:p-6">

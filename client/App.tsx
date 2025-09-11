@@ -10,6 +10,7 @@ import { AuthProvider } from "@/lib/auth-context";
 
 
 import Welcome from "./pages/Welcome";
+import IssueDetails from "./pages/IssueDetails";
 import Explore from "./pages/Explore";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/" element={<Welcome />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/issues/:id" element={<IssueDetails />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
