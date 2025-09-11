@@ -1,13 +1,20 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { UserCircle, LogOut } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
 }
-
 export function Layout({ children }: LayoutProps) {
+
   const location = useLocation();
+  const navigate = useNavigate();
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("currentUser");
+    navigate("/");
+  };
 
   const isActive = (path: string) => location.pathname === path;
   const isWelcomeOrExplore =
@@ -131,7 +138,10 @@ export function Layout({ children }: LayoutProps) {
                 <Link to="/profile">
                   <UserCircle className="w-10 h-10 text-white hover:text-cs-blue-light transition-colors" />
                 </Link>
-                <button className="flex items-center space-x-2 bg-cs-red-logout px-2 sm:px-3 py-2 rounded-md hover:bg-cs-red-logout/80 transition-colors">
+                <button
+                  className="flex items-center space-x-2 bg-cs-red-logout px-2 sm:px-3 py-2 rounded-md hover:bg-cs-red-logout/80 transition-colors"
+                  onClick={handleLogout}
+                >
                   <LogOut className="w-4 h-4 text-white" />
                   <span className="text-white text-sm font-bold hidden sm:inline">
                     Logout
