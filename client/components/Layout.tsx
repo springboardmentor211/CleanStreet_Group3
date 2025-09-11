@@ -113,6 +113,17 @@ export function Layout({ children }: LayoutProps) {
                 >
                   View Complaints
                 </Link>
+
+                <Link
+                  to="/maps"
+                  className={`text-base ${
+                    isActive("/maps")
+                      ? "text-cs-blue-secondary"
+                      : "text-white"
+                  } hover:text-cs-blue-secondary transition-colors`}
+                >
+                  Issue Map
+                </Link>
               </div>
 
               {/* Profile + Logout */}

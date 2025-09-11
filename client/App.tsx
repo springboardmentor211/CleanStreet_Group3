@@ -21,6 +21,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
+import Maps from "./pages/Maps";
 // import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/report" element={<Report />} />
             <Route path="/complaints" element={<CommunityReports />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/maps" element={<Maps />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       </BrowserRouter>

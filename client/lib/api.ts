@@ -225,14 +225,15 @@ export const issuesAPI = {
     });
   },
 
-  vote: async (id: string) => {
+  vote: async (id: string, type: 'up' | 'down') => {
     return apiRequest(`/issues/${id}/vote`, {
       method: 'POST',
+      body: JSON.stringify({ type }),
     });
   },
 
   addComment: async (id: string, text: string) => {
-    return apiRequest(`/issues/${id}/comments`, {
+    return apiRequest(`/issues/${id}/comment`, {
       method: 'POST',
       body: JSON.stringify({ text }),
     });

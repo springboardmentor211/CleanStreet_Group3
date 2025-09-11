@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { ThumbsUp, ThumbsDown, MessageCircle, MapPin, Clock } from "lucide-react";
+import { issuesAPI } from "@/lib/api";
 
 export default function IssueDetails() {
   const { id } = useParams();
@@ -9,9 +10,12 @@ export default function IssueDetails() {
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
+  const [voteAnimating, setVoteAnimating] = useState(false);
+  const [commentAnimating, setCommentAnimating] = useState(false);
 
   useEffect(() => {
     async function fetchIssue() {
+      setLoading(true);
       try {
         const res = await fetch(`http://localhost:5000/api/issues/${id}`);
         const data = await res.json();
@@ -27,34 +31,46 @@ export default function IssueDetails() {
   }, [id]);
 
   const handleVote = async (type: "up" | "down") => {
+    if (!issue) return;
+    setVoteAnimating(true);
+    setIssue(prev => prev ? { ...prev, votes: (prev.votes || 0) + (type === "up" ? 1 : -1) } : prev);
     try {
-      const res = await fetch(`http://localhost:5000/api/issues/${id}/vote`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${localStorage.getItem("authToken")}` },
-      });
-      if (res.ok) {
-        setIssue(prev => prev ? { ...prev, votes: (prev.votes || 0) + 1 } : prev);
+      await issuesAPI.vote(id, type);
+      const res = await issuesAPI.getById(id);
+      if (res && res.data) {
+        setIssue(res.data);
       }
-    } catch {}
+    } catch (err) {
+      // Optionally show error toast
+    } finally {
+      setTimeout(() => setVoteAnimating(false), 400);
+    }
   };
 
   const handleComment = async () => {
     if (!comment.trim()) return;
+    setCommentAnimating(true);
+    // Optimistically add comment to UI
+    const newComment = {
+      text: comment,
+      user: { fullName: "You" },
+      createdAt: new Date().toISOString(),
+      _id: Math.random().toString(36).slice(2),
+    };
+    setComments(prev => [newComment, ...prev]);
+    setComment("");
     try {
-      const res = await fetch(`http://localhost:5000/api/issues/${id}/comment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-        },
-        body: JSON.stringify({ text: comment })
-      });
-      if (res.ok) {
-        const newComments = await res.json();
-        setComments(newComments);
-        setComment("");
+      await issuesAPI.addComment(id, newComment.text);
+      // Refetch comments from backend for accuracy
+      const res = await issuesAPI.getById(id);
+      if (res && res.data) {
+        setComments(res.data.comments || []);
       }
-    } catch {}
+    } catch (err) {
+      // Optionally show error toast
+    } finally {
+      setTimeout(() => setCommentAnimating(false), 400);
+    }
   };
 
   if (loading) return <Layout><div className="text-center py-20 text-white">Loading...</div></Layout>;
@@ -72,10 +88,18 @@ export default function IssueDetails() {
         </div>
         <div className="mb-6 text-white/90 text-lg">{issue.description}</div>
         <div className="flex gap-6 mb-8">
-          <button onClick={() => handleVote("up")} className="flex items-center gap-2 px-4 py-2 rounded bg-cs-blue-primary text-white font-bold hover:bg-cs-blue-dark">
+          <button
+            onClick={() => handleVote("up")}
+            className={`flex items-center gap-2 px-4 py-2 rounded bg-cs-blue-primary text-white font-bold hover:bg-cs-blue-dark transition-transform ${voteAnimating ? "scale-105 ring-2 ring-cs-blue-primary" : ""}`}
+            disabled={voteAnimating}
+          >
             <ThumbsUp className="w-5 h-5" /> Upvote ({issue.votes || 0})
           </button>
-          <button onClick={() => handleVote("down")} className="flex items-center gap-2 px-4 py-2 rounded bg-red-600 text-white font-bold hover:bg-red-700">
+          <button
+            onClick={() => handleVote("down")}
+            className={`flex items-center gap-2 px-4 py-2 rounded bg-red-600 text-white font-bold hover:bg-red-700 transition-transform ${voteAnimating ? "scale-105 ring-2 ring-red-600" : ""}`}
+            disabled={voteAnimating}
+          >
             <ThumbsDown className="w-5 h-5" /> Downvote
           </button>
         </div>
@@ -84,7 +108,10 @@ export default function IssueDetails() {
           <div className="space-y-4 mb-4">
             {comments.length === 0 && <div className="text-white/60">No comments yet.</div>}
             {comments.map((c, idx) => (
-              <div key={c._id || idx} className="bg-white/5 rounded p-3 text-white">
+              <div
+                key={c._id || idx}
+                className={`bg-white/5 rounded p-3 text-white transition-all duration-300 ${commentAnimating && idx === 0 ? "scale-105 ring-2 ring-cs-blue-primary" : ""}`}
+              >
                 <div className="font-bold">{c.user?.fullName || "Anonymous"}</div>
                 <div>{c.text}</div>
                 <div className="text-xs text-white/50 mt-1">{c.createdAt ? new Date(c.createdAt).toLocaleString() : ""}</div>
