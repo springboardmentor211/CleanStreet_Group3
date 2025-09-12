@@ -7,6 +7,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { login, isAuthenticated, loginSuccess, loginError } = useAuth();
@@ -108,14 +109,31 @@ export default function Login() {
 
           {/* Password */}
           <label className="block text-sm mb-1">Password</label>
-          <input
-            type="password"
-            placeholder="Enter your password"
-            className="w-full p-2 mb-2 rounded bg-background border border-white/30 text-white placeholder:text-white/50"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="relative mb-2">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              className="w-full p-2 rounded bg-background border border-white/30 text-white placeholder:text-white/50 pr-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <span
+              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-white/70 hover:text-white flex items-center"
+              onClick={() => setShowPassword((prev) => !prev)}
+              tabIndex={0}
+              role="button"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                // Eye-off SVG
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M10.584 10.587A3 3 0 0013.41 13.413M9.88 5.177A8.967 8.967 0 0112 5c5.523 0 10 4.477 10 10a9.96 9.96 0 01-3.11 6.16M6.53 6.53A9.96 9.96 0 002 15c0 .94.13 1.85.37 2.71"/></svg>
+              ) : (
+                // Eye SVG
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12zm11 3a3 3 0 100-6 3 3 0 000 6z"/></svg>
+              )}
+            </span>
+          </div>
 
           {/* Remember + Forgot */}
           <div className="flex items-center justify-between text-sm mb-4">

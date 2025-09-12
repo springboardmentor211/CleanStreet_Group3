@@ -41,15 +41,20 @@ export default function MiniMap({ onLocationSelect }) {
     // eslint-disable-next-line
   }, []);
 
+  // Only render the map once position is set
+  if (!position) {
+    return <div style={{ height: "250px", width: "100%", borderRadius: "12px", background: "#eee", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading map...</div>;
+  }
   return (
     <div style={{ width: "100%" }}>
       <MapContainer
-        center={[position?.lat || DEFAULT_POSITION.lat, position?.lng || DEFAULT_POSITION.lng]}
+        center={[position.lat, position.lng]}
         zoom={13}
         style={{ height: "250px", width: "100%", borderRadius: "12px" }}
         scrollWheelZoom={true}
       >
         <TileLayer
+          // @ts-ignore
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
