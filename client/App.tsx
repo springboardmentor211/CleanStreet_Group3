@@ -22,6 +22,11 @@ import Profile from "./pages/Profile";
 import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
 import Maps from "./pages/Maps";
+import Admindashboard from "./pages/Admindashboard";
+import AdminLogin from "./pages/AdminLogin";
+import Complaints from "./pages/Complaints";
+import ReportGenerator from "./pages/ReportGenerator";
+
 // import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
 
@@ -49,6 +54,11 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/maps" element={<Maps />} />
             <Route path="*" element={<NotFound />} />
+            <Route path="/admin/dashboard" element={<Admindashboard/>} />
+            <Route path="/admin/login" element={<AdminLogin/>} />
+            <Route path="/admin/complaints " element={<Complaints/>} />
+            <Route path="/admin/report" element={<ReportGenerator/>} />
+            
           </Routes>
       </BrowserRouter>
     </TooltipProvider>
