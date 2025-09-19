@@ -13,6 +13,7 @@ import Welcome from "./pages/Welcome";
 import IssueDetails from "./pages/IssueDetails";
 import Explore from "./pages/Explore";
 import Login from "./pages/Login";
+import AdminLogin from "./pages/AdminLogin";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import CommunityReports from "./pages/CommunityReports";
@@ -24,6 +25,8 @@ import NotFound from "./pages/NotFound";
 import Maps from "./pages/Maps";
 import Admindashboard from "./pages/Admindashboard";
 import AdminLogin from "./pages/AdminLogin";
+
+
 import Complaints from "./pages/Complaints";
 import ReportGenerator from "./pages/ReportGenerator";
 
@@ -55,9 +58,12 @@ const App = () => (
             <Route path="/maps" element={<Maps />} />
             <Route path="*" element={<NotFound />} />
             <Route path="/admin/dashboard" element={<Admindashboard/>} />
-            <Route path="/admin/login" element={<AdminLogin/>} />
             <Route path="/admin/complaints " element={<Complaints/>} />
             <Route path="/admin/report" element={<ReportGenerator/>} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+
+            <Route path="/login" element={<AdminLogin />} />
+
             
           </Routes>
       </BrowserRouter>

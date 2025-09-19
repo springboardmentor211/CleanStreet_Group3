@@ -67,30 +67,38 @@ export default function Welcome() {
 
           {/* Auth Buttons or Dashboard Button */}
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <Link
-                to="/dashboard"
-                className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="text-white hover:text-cs-blue-light transition-colors px-4 py-2"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
+  {isAuthenticated ? (
+    <Link
+      to="/dashboard"
+      className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
+    >
+      Dashboard
+    </Link>
+  ) : (
+    <>
+      <Link
+        to="/login"
+        className="text-white hover:text-cs-blue-light transition-colors px-4 py-2"
+      >
+        Login
+      </Link>
+      <Link
+        to="/register"
+        className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
+      >
+        Register
+      </Link>
+      {/* ✅ New Admin Login Button */}
+      <Link
+        to="/admin-login"
+        className="text-white border border-cs-blue-secondary px-6 py-2 rounded-cs-button hover:bg-cs-blue-secondary hover:text-white transition-colors"
+      >
+        Admin Login
+      </Link>
+    </>
+  )}
+</div>
+
         </div>
       </nav>
 
