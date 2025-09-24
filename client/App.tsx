@@ -24,7 +24,9 @@ import Profile from "./pages/Profile";
 import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
 import Maps from "./pages/Maps";
-import Admindashboard from "./pages/Admindashboard";
+// IMPORTANT: Use correct casing for AdminDashboard import. File must be AdminDashboard.tsx
+import AdminDashboard from "./pages/AdminDashboard";
+
 
 
 
@@ -58,13 +60,12 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/maps" element={<Maps />} />
             <Route path="*" element={<NotFound />} />
-            <Route path="/admin/dashboard" element={<Admindashboard/>} />
+            <Route path="/admin/dashboard" element={<AdminDashboard/>} />
             <Route path="/admin/complaints" element={<Complaints/>} />
             <Route path="/admin/report" element={<ReportGenerator/>} />
             <Route path="/admin-setup" element={<AdminSetup />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
 
-            <Route path="/login" element={<AdminLogin />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
 
             
           </Routes>

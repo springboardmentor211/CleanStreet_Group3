@@ -1,8 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const AdminSetup: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [alreadySet, setAlreadySet] = useState(false);
+
+  useEffect(() => {
+    const savedUsername = localStorage.getItem("adminUsername");
+    const savedPassword = localStorage.getItem("adminPassword");
+
+    if (savedUsername && savedPassword) {
+      setAlreadySet(true);
+    }
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -12,13 +22,27 @@ const AdminSetup: React.FC = () => {
       return;
     }
 
-    // ✅ Save credentials securely (for demo: localStorage)
     localStorage.setItem("adminUsername", username);
     localStorage.setItem("adminPassword", password);
 
     alert("✅ Admin credentials saved successfully!");
-    window.location.href = "/admin-login"; // Redirect to login page
+    window.location.href = "/admin-login";
   };
+
+  if (alreadySet) {
+    return (
+      <div style={{ padding: "20px", maxWidth: "400px", margin: "50px auto" }}>
+        <h2>Admin Credentials Already Set</h2>
+        <p>You cannot reset credentials from here. Please log in.</p>
+        <button
+          onClick={() => (window.location.href = "/admin-login")}
+          style={{ marginTop: "20px", padding: "10px", width: "100%" }}
+        >
+          Go to Login
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "20px", maxWidth: "400px", margin: "50px auto" }}>
