@@ -9,11 +9,19 @@ const AdminLogin: React.FC = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Simple fixed login credentials
-    if (username === "admin" && password === "1234") {
+    const savedUsername = localStorage.getItem("adminUsername");
+    const savedPassword = localStorage.getItem("adminPassword");
+
+    if (!savedUsername || !savedPassword) {
+      alert("No admin account found. Please set up credentials first.");
+      window.location.href = "/admin-setup";
+      return;
+    }
+
+    if (username === savedUsername && password === savedPassword) {
       navigate("/dashboard");
     } else {
-      alert("Invalid credentials! Use admin / 1234");
+      alert("Invalid username or password!");
     }
   };
 
