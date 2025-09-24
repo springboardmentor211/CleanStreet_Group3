@@ -1,7 +1,8 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { upload } = require('../middleware/upload');
+const { uploadIssueImage } = require('../utils/cloudinary');
 const Issue = require('../models/Issue');
 const User = require('../models/User');
 const router = express.Router();
@@ -97,10 +98,19 @@ router.post('/', [
       }
     }
 
-    // Extract image file paths from req.files
+    // Upload images to Cloudinary
     let images = [];
     if (req.files && req.files.length > 0) {
-      images = req.files.map(file => file.path);
+      try {
+        const uploadPromises = req.files.map(file => 
+          uploadIssueImage(file.buffer)
+        );
+        const uploadResults = await Promise.all(uploadPromises);
+        images = uploadResults.map(result => result.secure_url);
+      } catch (uploadError) {
+        console.error('Image upload error:', uploadError);
+        return res.status(500).json({ message: 'Error uploading images' });
+      }
     }
 
     const issue = new Issue({

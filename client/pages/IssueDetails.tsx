@@ -110,7 +110,7 @@ export default function IssueDetails() {
                     className="block"
                   >
                     <img
-                      src={`http://localhost:5000/${imgPath.replace(/\\/g, '/')}`}
+                      src={`${imgPath}`}
                       alt={`Issue image ${idx + 1}`}
                       className="w-40 h-40 object-cover rounded-lg border border-white/20 hover:scale-105 transition-transform shadow"
                     />
