@@ -7,42 +7,52 @@ export interface Issue {
   location: string;
   timeAgo?: string; // optional, deprecated
   createdAt: string; // ISO string or date string
-  status: "received" | "in_progress" | "resolved";
+  status: "Received" | "In Progress" | "Resolved" | "Closed";
   upvotes: number;
   downvotes: number;
   comments: number;
   icon: string;
   address?: string;
+  _id?: string; // MongoDB ID
+  votes?: number; // Legacy votes field
+  voters?: string[]; // Array of user IDs who voted
 }
 
 interface IssueCardProps {
   issue: Issue;
-  onVote: (issueId: string, type: "up" | "down") => void;
+  onVote: (e: React.MouseEvent, issueId: string, type: "up" | "down") => void;
 }
 
 const statusConfig = {
-  received: {
-    bg: "bg-cs-blue-primary",
+  "Received": {
+    bg: "bg-orange-400",
     text: "text-white",
     label: "Received"
   },
-  in_progress: {
+  "In Progress": {
     bg: "bg-yellow-600",
     text: "text-white", 
     label: "In Progress"
   },
-  resolved: {
+  "Resolved": {
     bg: "bg-green-600",
     text: "text-white",
     label: "Resolved"
+  },
+  "Closed": {
+    bg: "bg-gray-600",
+    text: "text-white",
+    label: "Closed"
   }
 };
 
 export function IssueCard({ issue, onVote }: IssueCardProps) {
-  const statusStyle = statusConfig[issue.status] || {
-    bg: "bg-cs-blue-primary",
+  // Ensure status is properly cased to match our config
+  const normalizedStatus = issue.status as keyof typeof statusConfig;
+  const statusStyle = statusConfig[normalizedStatus] || {
+    bg: "bg-gray-500",
     text: "text-white",
-    label: issue.status || "Received"
+    label: issue.status || "Unknown"
   };
 
   // Helper to format createdAt as hh:mm (24-hour)
@@ -105,8 +115,9 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
         <div className="flex items-center space-x-4 sm:space-x-8">
           {/* Upvotes */}
           <button
-            onClick={() => onVote(issue.id, "up")}
+            onClick={(e) => onVote(e, issue.id || issue._id || '', "up")}
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+            disabled={issue.voters?.includes('current-user')}
           >
             <ThumbsUp className="w-5 h-5 text-white" />
             <span className="text-white text-2xl font-bold">{issue.upvotes}</span>
@@ -114,8 +125,9 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
 
           {/* Downvotes */}
           <button
-            onClick={() => onVote(issue.id, "down")}
+            onClick={(e) => onVote(e, issue.id || issue._id || '', "down")}
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+            disabled={issue.voters?.includes('current-user')}
           >
             <ThumbsDown className="w-5 h-5 text-white" />
             <span className="text-white text-2xl  font-bold">{issue.downvotes}</span>

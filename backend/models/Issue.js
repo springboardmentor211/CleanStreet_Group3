@@ -73,10 +73,18 @@ const IssueSchema = new mongoose.Schema({
   images: [{
     type: String
   }],
-  votes: {
+  upvotes: {
     type: Number,
     default: 0
   },
+  downvotes: {
+    type: Number,
+    default: 0
+  },
+  voters: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   estimatedResolution: {
     type: Date
   },

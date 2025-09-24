@@ -1,8 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
-const { upload } = require('../middleware/upload');
-const { uploadIssueImage } = require('../utils/cloudinary');
+const upload = require('../middleware/upload');
 const Issue = require('../models/Issue');
 const User = require('../models/User');
 const router = express.Router();
@@ -98,19 +97,10 @@ router.post('/', [
       }
     }
 
-    // Upload images to Cloudinary
+    // Extract image file paths from req.files
     let images = [];
     if (req.files && req.files.length > 0) {
-      try {
-        const uploadPromises = req.files.map(file => 
-          uploadIssueImage(file.buffer)
-        );
-        const uploadResults = await Promise.all(uploadPromises);
-        images = uploadResults.map(result => result.secure_url);
-      } catch (uploadError) {
-        console.error('Image upload error:', uploadError);
-        return res.status(500).json({ message: 'Error uploading images' });
-      }
+      images = req.files.map(file => file.path);
     }
 
     const issue = new Issue({
@@ -199,14 +189,36 @@ router.post('/:id/vote', auth, async (req, res) => {
       return res.status(404).json({ message: 'Issue not found' });
     }
 
-    // In a real application, you might want to track who voted to prevent multiple votes
-    issue.votes += 1;
+    const { type } = req.body; // 'up' or 'down'
+    const userId = req.user.id;
+
+    // Check if user already voted
+    const hasVoted = issue.voters.includes(userId);
+    if (hasVoted) {
+      return res.status(400).json({ message: 'You have already voted on this issue' });
+    }
+
+    // Update vote count
+    if (type === 'up') {
+      issue.upvotes += 1;
+    } else if (type === 'down') {
+      issue.downvotes += 1;
+    } else {
+      return res.status(400).json({ message: 'Invalid vote type' });
+    }
+
+    // Add user to voters list
+    issue.voters.push(userId);
     await issue.save();
 
-    res.json({ votes: issue.votes });
+    res.json({ 
+      success: true,
+      upvotes: issue.upvotes,
+      downvotes: issue.downvotes
+    });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
+    console.error('Vote error:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -275,7 +287,7 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/stats/dashboard', async (req, res) => {
   try {
     const totalIssues = await Issue.countDocuments();
-    const pendingIssues = await Issue.countDocuments({ status: 'Received' });
+    const ReceivedIssues = await Issue.countDocuments({ status: 'Received' });
     const inProgressIssues = await Issue.countDocuments({ status: 'In Progress' });
     const resolvedIssues = await Issue.countDocuments({ status: 'Resolved' });
 
@@ -292,7 +304,7 @@ router.get('/stats/dashboard', async (req, res) => {
 
     res.json({
       total: totalIssues,
-      pending: pendingIssues,
+      Received: ReceivedIssues,
       inProgress: inProgressIssues,
       resolved: resolvedIssues,
       recentActivity

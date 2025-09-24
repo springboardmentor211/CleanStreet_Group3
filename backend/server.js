@@ -9,7 +9,6 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const issueRoutes = require('./routes/issues');
-const uploadRoutes = require('./routes/upload');
 
 const app = express();
 
@@ -50,7 +49,15 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// Note: Static file serving removed as we're now using Cloudinary for image hosting
+// Set CORS headers for static image files (fix NotSameOrigin for images)
+app.use('/uploads/images', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
 
 
 // Body parsing middleware
@@ -60,7 +67,6 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/issues', issueRoutes);
-app.use('/api/upload', uploadRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

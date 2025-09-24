@@ -55,7 +55,7 @@ const auth = async (req, res, next) => {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1]; // Get only the token part
     }
-    console.log('Token received:', token);
+    console.log('Token Received:', token);
     
 
     // Check if no token

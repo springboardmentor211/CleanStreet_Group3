@@ -1,8 +1,21 @@
 const multer = require('multer');
-const { uploadImage } = require('../utils/cloudinary');
+const path = require('path');
 
-// Configure multer for memory storage (we'll upload to cloudinary from memory)
-const storage = multer.memoryStorage();
+// Set up storage for uploaded files
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    if (file.fieldname === 'avatar') {
+      cb(null, 'uploads/avatars/');
+    } else {
+      cb(null, 'uploads/images/');
+    }
+  },
+  filename: function (req, file, cb) {
+    // Create unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
 
 // File filter function
 const fileFilter = (req, file, cb) => {
@@ -22,4 +35,4 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-module.exports = { upload, uploadToCloudinary: uploadImage };
+module.exports = upload;

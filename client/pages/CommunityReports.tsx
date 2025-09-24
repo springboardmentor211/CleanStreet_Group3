@@ -23,7 +23,7 @@ export default function CommunityReports() {
           downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
           comments: typeof issue.comments === "number" ? issue.comments : 0,
           timeAgo: issue.timeAgo || "recently",
-          status: issue.status || "received",
+          status: issue.status || "Received",
           location: typeof issue.location === "object" && issue.location !== null
             ? `(${issue.location.coordinates?.[1]}, ${issue.location.coordinates?.[0]})`
             : (issue.location || "Unknown location")
@@ -36,17 +36,72 @@ export default function CommunityReports() {
     fetchIssues();
   }, []);
 
-  const handleVote = (issueId: string, type: "up" | "down") => {
-    setIssues(prev => prev.map(issue => {
-      if (issue.id === issueId) {
-        return {
-          ...issue,
-          upvotes: type === "up" ? issue.upvotes + 1 : issue.upvotes,
-          downvotes: type === "down" ? issue.downvotes + 1 : issue.downvotes
-        };
+  const handleVote = async (e: React.MouseEvent, issueId: string, type: "up" | "down") => {
+    e.stopPropagation(); // Prevent navigation when clicking vote buttons
+    
+    try {
+      // Optimistic UI update
+      setIssues(prev => prev.map(issue => {
+        if (issue.id === issueId || issue._id === issueId) {
+          return {
+            ...issue,
+            upvotes: type === "up" ? issue.upvotes + 1 : issue.upvotes,
+            downvotes: type === "down" ? issue.downvotes + 1 : issue.downvotes,
+            voters: [...(issue.voters || []), 'current-user'] // Temporary optimistic update
+          };
+        }
+        return issue;
+      }));
+
+      const response = await fetch(`http://localhost:5000/api/issues/${issueId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({ type })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update vote');
       }
-      return issue;
-    }));
+
+      // Refresh issues to get the latest data
+      const updatedIssues = await fetch("http://localhost:5000/api/issues");
+      const data = await updatedIssues.json();
+      
+      const safeIssues = (data.issues || []).map(issue => ({
+        ...issue,
+        icon: issue.icon || "road",
+        upvotes: typeof issue.upvotes === "number" ? issue.upvotes : 0,
+        downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
+        comments: typeof issue.comments === "number" ? issue.comments : 0,
+        timeAgo: issue.timeAgo || "recently",
+        status: issue.status || "Received"
+      }));
+      
+      setIssues(safeIssues);
+      
+    } catch (error) {
+      console.error('Error voting:', error);
+      // Revert optimistic update on error
+      const issuesResponse = await fetch("http://localhost:5000/api/issues");
+      const data = await issuesResponse.json();
+      const safeIssues = (data.issues || []).map(issue => ({
+        ...issue,
+        icon: issue.icon || "road",
+        upvotes: typeof issue.upvotes === "number" ? issue.upvotes : 0,
+        downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
+        comments: typeof issue.comments === "number" ? issue.comments : 0,
+        timeAgo: issue.timeAgo || "recently",
+        status: issue.status || "Received"
+      }));
+      setIssues(safeIssues);
+      
+      // Show error toast
+      alert(error.message || 'Failed to update vote');
+    }
   };
 
   const navigate = useNavigate();

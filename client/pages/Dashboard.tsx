@@ -80,7 +80,7 @@ function ActivityItem({ title, time }: ActivityItemProps) {
 export default function Dashboard() {
   const [metrics, setMetrics] = useState({
     total: 0,
-    pending: 0,
+    Received: 0,
     inProgress: 0,
     resolved: 0,
     recentActivity: [],
@@ -92,7 +92,7 @@ export default function Dashboard() {
         const res = await issuesAPI.getDashboardStats();
         setMetrics({
           total: res.total || 0,
-          pending: res.pending || 0,
+          Received: res.Received || 0,
           inProgress: res.inProgress || 0,
           resolved: res.resolved || 0,
           recentActivity: Array.isArray(res.recentActivity) ? res.recentActivity : [],
@@ -112,8 +112,8 @@ export default function Dashboard() {
       icon: <FileText className="w-[35px] h-[35px] text-white" />
     },
     {
-      title: "Pending", 
-      value: metrics.pending,
+      title: "Received", 
+      value: metrics.Received,
       icon: <Clock className="w-[35px] h-[35px] text-white" />
     },
     {

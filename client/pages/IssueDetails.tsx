@@ -14,6 +14,7 @@ export default function IssueDetails() {
   const [comments, setComments] = useState([]);
   const [voteAnimating, setVoteAnimating] = useState(false);
   const [commentAnimating, setCommentAnimating] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     async function fetchIssue() {
@@ -46,6 +47,23 @@ export default function IssueDetails() {
       // Optionally show error toast
     } finally {
       setTimeout(() => setVoteAnimating(false), 400);
+    }
+  };
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (!issue || isUpdatingStatus) return;
+    
+    setIsUpdatingStatus(true);
+    try {
+      await issuesAPI.update(id, { status: newStatus });
+      // Update the local state to reflect the change
+      setIssue(prev => prev ? { ...prev, status: newStatus } : null);
+      // Optionally show success toast
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      // Optionally show error toast
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -110,7 +128,7 @@ export default function IssueDetails() {
                     className="block"
                   >
                     <img
-                      src={`${imgPath}`}
+                      src={`http://localhost:5000/${imgPath.replace(/\\/g, '/')}`}
                       alt={`Issue image ${idx + 1}`}
                       className="w-40 h-40 object-cover rounded-lg border border-white/20 hover:scale-105 transition-transform shadow"
                     />
@@ -119,21 +137,72 @@ export default function IssueDetails() {
               </div>
             </div>
           )}
-        <div className="flex gap-6 mb-8">
-          <button
-            onClick={() => handleVote("up")}
-            className={`flex items-center gap-2 px-4 py-2 rounded bg-cs-blue-primary text-white font-bold hover:bg-cs-blue-dark transition-transform ${voteAnimating ? "scale-105 ring-2 ring-cs-blue-primary" : ""}`}
-            disabled={voteAnimating}
-          >
-            <ThumbsUp className="w-5 h-5" /> Upvote ({issue.votes || 0})
-          </button>
-          <button
-            onClick={() => handleVote("down")}
-            className={`flex items-center gap-2 px-4 py-2 rounded bg-red-600 text-white font-bold hover:bg-red-700 transition-transform ${voteAnimating ? "scale-105 ring-2 ring-red-600" : ""}`}
-            disabled={voteAnimating}
-          >
-            <ThumbsDown className="w-5 h-5" /> Downvote
-          </button>
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex items-center gap-2">
+            <span className="text-white font-medium">Status:</span>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              issue.status === 'Received' ? 'bg-blue-100 text-blue-800' :
+              issue.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-green-100 text-green-800'
+            }`}>
+              {issue.status}
+            </span>
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => handleStatusUpdate('Received')}
+              disabled={isUpdatingStatus || issue.status === 'Received'}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                issue.status === 'Received' 
+                  ? 'bg-blue-600 text-white cursor-default' 
+                  : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+              }`}
+            >
+              {isUpdatingStatus && issue.status === 'Received' ? 'Updating...' : 'Mark as Received'}
+            </button>
+            
+            <button
+              onClick={() => handleStatusUpdate('In Progress')}
+              disabled={isUpdatingStatus || issue.status === 'In Progress'}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                issue.status === 'In Progress' 
+                  ? 'bg-yellow-600 text-white cursor-default' 
+                  : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+              }`}
+            >
+              {isUpdatingStatus && issue.status === 'In Progress' ? 'Updating...' : 'Mark as In Progress'}
+            </button>
+            
+            <button
+              onClick={() => handleStatusUpdate('Resolved')}
+              disabled={isUpdatingStatus || issue.status === 'Resolved'}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                issue.status === 'Resolved' 
+                  ? 'bg-green-600 text-white cursor-default' 
+                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+              }`}
+            >
+              {isUpdatingStatus && issue.status === 'Resolved' ? 'Updating...' : 'Mark as Resolved'}
+            </button>
+          </div>
+          
+          <div className="flex gap-6 mt-2">
+            <button
+              onClick={() => handleVote("up")}
+              className={`flex items-center gap-2 px-4 py-2 rounded bg-cs-blue-primary text-white font-bold hover:bg-cs-blue-dark transition-transform ${voteAnimating ? "scale-105 ring-2 ring-cs-blue-primary" : ""}`}
+              disabled={voteAnimating}
+            >
+              <ThumbsUp className="w-5 h-5" /> Upvote ({issue.votes || 0})
+            </button>
+            <button
+              onClick={() => handleVote("down")}
+              className={`flex items-center gap-2 px-4 py-2 rounded bg-red-600 text-white font-bold hover:bg-red-700 transition-transform ${voteAnimating ? "scale-105 ring-2 ring-red-600" : ""}`}
+              disabled={voteAnimating}
+            >
+              <ThumbsDown className="w-5 h-5" /> Downvote
+            </button>
+          </div>
         </div>
         <div className="mb-4">
           <h2 className="text-xl font-semibold text-white mb-2">Comments</h2>

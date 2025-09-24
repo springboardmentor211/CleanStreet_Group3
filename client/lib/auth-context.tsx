@@ -97,16 +97,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(null);
       setUserInfo(null);
       setToken(null);
-      setLoginError('No token or user received, login failed.');
+      setLoginError('No token or user Received, login failed.');
       setLoginSuccess(false);
-      console.log('No token or user received, login failed.');
+      console.log('No token or user Received, login failed.');
       console.log('AuthContext fields after login:');
       console.log('user:', null);
       console.log('userInfo:', null);
       console.log('token:', null);
       console.log('isAuthenticated:', false);
       console.log('loading:', false);
-      console.log('loginError:', 'No token or user received, login failed.');
+      console.log('loginError:', 'No token or user Received, login failed.');
       console.log('loginSuccess:', false);
     }
     setLoading(false);
