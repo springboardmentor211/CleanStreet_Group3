@@ -302,6 +302,10 @@ export const adminAPI = {
   getAllUsers: async () => {
     return apiRequest('/admin/users');
   },
+
+  getTrends: async () => {
+    return apiRequest('/admin/trends');
+  },
 };
 
 // Health check

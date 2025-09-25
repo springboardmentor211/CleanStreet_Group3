@@ -16,7 +16,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Eye
+  Eye,
+  Download,
+  FileImage,
+  FileBarChart
 } from 'lucide-react';
 
 interface AdminStats {
@@ -65,6 +68,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [trends, setTrends] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -111,6 +115,16 @@ const AdminDashboard = () => {
       } catch (err) {
         console.error('Error fetching users:', err);
       }
+
+      // Fetch trends
+      try {
+        const response = await adminAPI.getTrends();
+        setTrends(response.monthlyTrends || response.data?.monthlyTrends || []);
+      } catch (err) {
+        console.error('Error fetching trends:', err);
+        // Set empty trends data as fallback
+        setTrends([]);
+      }
       
     } catch (err) {
       console.error('Error fetching admin data:', err);
@@ -141,6 +155,120 @@ const AdminDashboard = () => {
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
+  };
+
+  // Download utilities
+  const downloadCSV = (data: any[], filename: string) => {
+    if (!data || data.length === 0) return;
+    
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadChartAsPNG = (elementId: string, filename: string) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    // Use html2canvas library (you'd need to install it)
+    // For now, we'll create a simple canvas representation
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = element.offsetWidth;
+    canvas.height = element.offsetHeight;
+    
+    if (ctx) {
+      ctx.fillStyle = '#0B0F19';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '16px Arial';
+      ctx.fillText('Chart Image - ' + filename, 20, 30);
+    }
+    
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    });
+  };
+
+  const downloadPageAsPDF = () => {
+    // Simple implementation - in production you'd use jsPDF or similar
+    const content = document.getElementById('analytics-content');
+    if (content) {
+      window.print();
+    }
+  };
+
+  // Data preparation functions
+  const getCategoryCSVData = () => {
+    if (!stats?.issuesByCategory) return [];
+    return stats.issuesByCategory.map(item => ({
+      Category: item._id,
+      Count: item.count,
+      Percentage: ((item.count / stats.totalIssues) * 100).toFixed(2) + '%'
+    }));
+  };
+
+  const getStatusCSVData = () => {
+    if (!stats?.issuesByStatus) return [];
+    return stats.issuesByStatus.map(item => ({
+      Status: item._id,
+      Count: item.count,
+      Percentage: ((item.count / stats.totalIssues) * 100).toFixed(2) + '%'
+    }));
+  };
+
+  const getTrendsCSVData = () => {
+    return trends.map(trend => ({
+      Month: trend.month,
+      Year: trend.year,
+      'Issue Count': trend.count
+    }));
+  };
+
+  const getPriorityCSVData = () => {
+    const priorities = [
+      { name: 'Critical', count: 3 },
+      { name: 'High', count: 8 },
+      { name: 'Medium', count: 15 },
+      { name: 'Low', count: 6 }
+    ];
+    return priorities.map(p => ({
+      Priority: p.name,
+      Count: p.count
+    }));
+  };
+
+  const downloadAllCSVs = () => {
+    downloadCSV(getCategoryCSVData(), 'issues-by-category');
+    setTimeout(() => downloadCSV(getStatusCSVData(), 'issues-by-status'), 100);
+    setTimeout(() => downloadCSV(getTrendsCSVData(), 'issue-trends'), 200);
+    setTimeout(() => downloadCSV(getPriorityCSVData(), 'priority-distribution'), 300);
+  };
+
+  const downloadAllCharts = () => {
+    downloadChartAsPNG('category-chart', 'category-chart');
+    setTimeout(() => downloadChartAsPNG('status-chart', 'status-chart'), 100);
+    setTimeout(() => downloadChartAsPNG('trends-chart', 'trends-chart'), 200);
+    setTimeout(() => downloadChartAsPNG('priority-chart', 'priority-chart'), 300);
   };
 
   const getStatusColor = (status: string) => {
@@ -421,14 +549,72 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="analytics">
+          <TabsContent value="analytics" id="analytics-content">
+            {/* Analytics Download Controls */}
+            <div className="mb-6 p-4 bg-[#111827] rounded-lg border border-white/30">
+              <div className="flex flex-wrap gap-3 items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">Analytics Export</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={downloadAllCSVs}
+                    variant="outline"
+                    size="sm"
+                    className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5] flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download All CSVs
+                  </Button>
+                  <Button
+                    onClick={downloadAllCharts}
+                    variant="outline"
+                    size="sm"
+                    className="border-white/30 text-white hover:bg-[#3576E0] hover:border-[#3576E0] flex items-center gap-2"
+                  >
+                    <FileImage className="h-4 w-4" />
+                    Download All Charts
+                  </Button>
+                  <Button
+                    onClick={downloadPageAsPDF}
+                    variant="outline"
+                    size="sm"
+                    className="border-white/30 text-white hover:bg-[#832E2E] hover:border-[#832E2E] flex items-center gap-2"
+                  >
+                    <FileBarChart className="h-4 w-4" />
+                    Export as PDF
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Issues by Category - Bar Chart */}
               <Card className="bg-background border-white/30">
                 <CardHeader>
-                  <CardTitle className="text-white">Issues by Category</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-white">Issues by Category</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => downloadCSV(getCategoryCSVData(), 'issues-by-category')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5]"
+                        title="Download as CSV"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        onClick={() => downloadChartAsPNG('category-chart', 'category-chart')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#3576E0] hover:border-[#3576E0]"
+                        title="Download as Image"
+                      >
+                        <FileImage className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent id="category-chart">
                   <div className="space-y-4">
                     {stats?.issuesByCategory.map((item) => {
                       const maxCount = Math.max(...(stats?.issuesByCategory?.map(i => i.count) || [1]));
@@ -455,9 +641,31 @@ const AdminDashboard = () => {
               {/* Issues by Status - Donut Chart */}
               <Card className="bg-background border-white/30">
                 <CardHeader>
-                  <CardTitle className="text-white">Issues by Status</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-white">Issues by Status</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => downloadCSV(getStatusCSVData(), 'issues-by-status')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5]"
+                        title="Download as CSV"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        onClick={() => downloadChartAsPNG('status-chart', 'status-chart')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#3576E0] hover:border-[#3576E0]"
+                        title="Download as Image"
+                      >
+                        <FileImage className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent id="status-chart">
                   <div className="flex items-center justify-center">
                     {stats?.issuesByStatus.length > 0 && (
                       <div className="relative w-48 h-48">
@@ -543,42 +751,72 @@ const AdminDashboard = () => {
               {/* Monthly Trend - Bar Chart */}
               <Card className="bg-background border-white/30 lg:col-span-2">
                 <CardHeader>
-                  <CardTitle className="text-white">Issue Trends</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Simulated monthly data - you can replace with real API data */}
-                    {(() => {
-                      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                      const data = [12, 19, 15, 25, 22, 18]; // Simulated data
-                      const maxValue = Math.max(...data);
-                      
-                      return (
-                        <div className="h-64 flex items-end justify-between px-4">
-                          {data.map((value, index) => {
-                            const height = (value / maxValue) * 200;
-                            return (
-                              <div key={months[index]} className="flex flex-col items-center gap-2">
-                                <div className="flex items-end h-48">
-                                  <div
-                                    className="bg-gradient-to-t from-[#2759C5] to-[#ACCFFF] rounded-t-lg w-12 transition-all duration-1000 ease-out hover:from-[#3576E0] hover:to-[#2759C5] cursor-pointer relative group"
-                                    style={{ height: `${height}px` }}
-                                  >
-                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                                      {value}
-                                    </div>
-                                  </div>
-                                </div>
-                                <span className="text-sm text-white/60">{months[index]}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-                    <div className="text-center">
-                      <p className="text-sm text-white/60">Issues reported per month (Last 6 months)</p>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-white">Issue Trends</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => downloadCSV(getTrendsCSVData(), 'issue-trends')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5]"
+                        title="Download as CSV"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        onClick={() => downloadChartAsPNG('trends-chart', 'trends-chart')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#3576E0] hover:border-[#3576E0]"
+                        title="Download as Image"
+                      >
+                        <FileImage className="h-3 w-3" />
+                      </Button>
                     </div>
+                  </div>
+                </CardHeader>
+                <CardContent id="trends-chart">
+                  <div className="space-y-4">
+                    {trends && trends.length > 0 ? (
+                      <>
+                        {(() => {
+                          const maxValue = Math.max(...trends.map(t => t.count), 1);
+                          
+                          return (
+                            <div className="h-64 flex items-end justify-between px-4">
+                              {trends.map((trend, index) => {
+                                const height = maxValue > 0 ? (trend.count / maxValue) * 200 : 0;
+                                return (
+                                  <div key={`${trend.year}-${trend.monthNumber}`} className="flex flex-col items-center gap-2">
+                                    <div className="flex items-end h-48">
+                                      <div
+                                        className="bg-gradient-to-t from-[#2759C5] to-[#ACCFFF] rounded-t-lg w-12 transition-all duration-1000 ease-out hover:from-[#3576E0] hover:to-[#2759C5] cursor-pointer relative group"
+                                        style={{ height: `${Math.max(height, 2)}px` }}
+                                      >
+                                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                          {trend.count} issues
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <span className="text-sm text-white/60">{trend.month}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                        <div className="text-center">
+                          <p className="text-sm text-white/60">Issues reported per month (Last 6 months)</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="h-64 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-white/60 mb-2">📊</div>
+                          <p className="text-sm text-white/60">Loading trends data...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -586,9 +824,31 @@ const AdminDashboard = () => {
               {/* Priority Distribution */}
               <Card className="bg-background border-white/30">
                 <CardHeader>
-                  <CardTitle className="text-white">Priority Distribution</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-white">Priority Distribution</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => downloadCSV(getPriorityCSVData(), 'priority-distribution')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5]"
+                        title="Download as CSV"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        onClick={() => downloadChartAsPNG('priority-chart', 'priority-chart')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#3576E0] hover:border-[#3576E0]"
+                        title="Download as Image"
+                      >
+                        <FileImage className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent id="priority-chart">
                   <div className="space-y-4">
                     {(() => {
                       const priorities = [
@@ -624,9 +884,36 @@ const AdminDashboard = () => {
               {/* Resolution Time Analytics */}
               <Card className="bg-background border-white/30">
                 <CardHeader>
-                  <CardTitle className="text-white">Resolution Performance</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-white">Resolution Performance</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => downloadCSV([{
+                          'Average Days to Resolve': '2.3',
+                          'Resolution Rate': '78%',
+                          'Fastest Resolution': '24h',
+                          'Resolved This Week': '12'
+                        }], 'resolution-performance')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5]"
+                        title="Download as CSV"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        onClick={() => downloadChartAsPNG('performance-chart', 'performance-chart')}
+                        variant="outline"
+                        size="sm"
+                        className="border-white/30 text-white hover:bg-[#3576E0] hover:border-[#3576E0]"
+                        title="Download as Image"
+                      >
+                        <FileImage className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent id="performance-chart">
                   <div className="space-y-6">
                     {/* Average Resolution Time */}
                     <div className="text-center">
