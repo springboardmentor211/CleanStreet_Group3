@@ -91,6 +91,56 @@ router.post('/login', [
   const { email, password } = req.body;
 
   try {
+    // Check for hardcoded admin credentials first
+    if (email === 'admin@cleanstreet.com' && password === 'admin123') {
+      // Create or find admin user
+      let adminUser = await User.findOne({ email: 'admin@cleanstreet.com' });
+      
+      if (!adminUser) {
+        // Create admin user if it doesn't exist
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        
+        adminUser = new User({
+          username: 'admin',
+          email: 'admin@cleanstreet.com',
+          password: hashedPassword,
+          fullName: 'System Administrator',
+          role: 'admin'
+        });
+        
+        await adminUser.save();
+      }
+
+      // Return token for admin
+      const payload = {
+        user: {
+          id: adminUser.id,
+          role: 'admin'
+        }
+      };
+
+      jwt.sign(
+        payload,
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' },
+        (err, token) => {
+          if (err) throw err;
+          res.json({ 
+            token,
+            user: {
+              id: adminUser.id,
+              username: adminUser.username,
+              email: adminUser.email,
+              fullName: adminUser.fullName,
+              role: 'admin'
+            }
+          });
+        }
+      );
+      return;
+    }
+
     // Check if user exists
     let user = await User.findOne({ email }).select('+password');
     if (!user) {
@@ -106,7 +156,8 @@ router.post('/login', [
     // Return jsonwebtoken
     const payload = {
       user: {
-        id: user.id
+        id: user.id,
+        role: user.role || 'citizen'
       }
     };
 

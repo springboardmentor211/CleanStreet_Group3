@@ -22,7 +22,8 @@ import Profile from "./pages/Profile";
 import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
 import Maps from "./pages/Maps";
-// import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
 
 const queryClient = new QueryClient();
@@ -37,17 +38,18 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Welcome />} />
             <Route path="/welcome" element={<Welcome />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/issues/:id" element={<IssueDetails />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             <Route path="/explore" element={<Explore />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/report" element={<Report />} />
-            <Route path="/complaints" element={<CommunityReports />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/maps" element={<Maps />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+            <Route path="/complaints" element={<ProtectedRoute><CommunityReports /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/maps" element={<ProtectedRoute><Maps /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       </BrowserRouter>

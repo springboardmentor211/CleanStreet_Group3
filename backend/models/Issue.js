@@ -53,8 +53,8 @@ const IssueSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Received', 'In Progress', 'Resolved', 'Closed'],
-    default: 'Received'
+    enum: ['open', 'in-progress', 'resolved', 'closed'],
+    default: 'open'
   },
   reportedBy: {
     type: mongoose.Schema.Types.ObjectId,

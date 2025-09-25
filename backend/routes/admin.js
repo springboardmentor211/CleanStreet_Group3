@@ -1,20 +1,8 @@
 const express = require('express');
-const auth = require('../middleware/auth');
+const { auth, adminAuth } = require('../middleware/auth');
 const Issue = require('../models/Issue');
 const User = require('../models/User');
 const router = express.Router();
-
-// Admin middleware - check if user is admin
-const adminAuth = async (req, res, next) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Admin access required' });
-    }
-    next();
-  } catch (error) {
-    res.status(500).send('Server error');
-  }
-};
 
 // Get all issues (admin view)
 router.get('/issues', auth, adminAuth, async (req, res) => {
@@ -145,6 +133,62 @@ router.get('/stats', auth, adminAuth, async (req, res) => {
       issuesByStatus,
       recentRegistrations
     });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// Get monthly issue trends
+router.get('/trends', auth, adminAuth, async (req, res) => {
+  try {
+    // Get issues from the last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    const monthlyTrends = await Issue.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sixMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { "_id.year": 1, "_id.month": 1 }
+      }
+    ]);
+    
+    // Create array for last 6 months with proper month names
+    const months = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleString('default', { month: 'short' });
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      
+      // Find matching data or default to 0
+      const monthData = monthlyTrends.find(trend => 
+        trend._id.year === year && trend._id.month === month
+      );
+      
+      months.push({
+        month: monthName,
+        count: monthData ? monthData.count : 0,
+        year: year,
+        monthNumber: month
+      });
+    }
+    
+    res.json({ monthlyTrends: months });
   } catch (error) {
     console.error(error.message);
     res.status(500).send('Server error');

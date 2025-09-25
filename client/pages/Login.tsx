@@ -10,10 +10,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { login, isAuthenticated, loginSuccess, loginError } = useAuth();
-  // Redirect to profile if already authenticated
+  const { login, isAuthenticated, loginSuccess, loginError, userInfo } = useAuth();
+  // Redirect based on user role if already authenticated
   if (isAuthenticated) {
-    navigate("/profile");
+    if (userInfo?.role === 'admin') {
+      navigate("/admin");
+    } else {
+      navigate("/profile");
+    }
     return null;
   }
 
@@ -31,7 +35,15 @@ export default function Login() {
 
     try {
       await login(email, password);
-      // Navigation handled by effect above
+      // Check for successful login and redirect based on role
+      setTimeout(() => {
+        const currentUserInfo = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUserInfo.role === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      }, 100);
     } catch (err: any) {
       console.error("Login error:", err);
       if (err.message) setError(err.message);

@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
-import { ThumbsUp, ThumbsDown, MessageCircle, MapPin, Clock } from "lucide-react";
-import { issuesAPI } from "@/lib/api";
+import { ThumbsUp, ThumbsDown, MessageCircle, MapPin, Clock, ArrowLeft } from "lucide-react";
+import { issuesAPI, adminAPI } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 export default function IssueDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
@@ -15,6 +17,8 @@ export default function IssueDetails() {
   const [voteAnimating, setVoteAnimating] = useState(false);
   const [commentAnimating, setCommentAnimating] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     async function fetchIssue() {
@@ -55,7 +59,12 @@ export default function IssueDetails() {
     
     setIsUpdatingStatus(true);
     try {
-      await issuesAPI.update(id, { status: newStatus });
+      if (isAdmin) {
+        // Use admin API for status updates
+        await adminAPI.updateIssueStatus(id, newStatus);
+      } else {
+        await issuesAPI.update(id, { status: newStatus });
+      }
       // Update the local state to reflect the change
       setIssue(prev => prev ? { ...prev, status: newStatus } : null);
       // Optionally show success toast
@@ -64,6 +73,14 @@ export default function IssueDetails() {
       // Optionally show error toast
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleGoBack = () => {
+    if (isAdmin) {
+      navigate('/admin');
+    } else {
+      navigate('/complaints');
     }
   };
 
@@ -98,7 +115,27 @@ export default function IssueDetails() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto bg-background rounded-xl p-8 mt-8 shadow-lg border border-white/10">
+      <div className="max-w-4xl mx-auto bg-background rounded-xl p-8 mt-8 shadow-lg border border-white/10">
+        {/* Back Button */}
+        <div className="mb-6">
+          <button
+            onClick={handleGoBack}
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span>{isAdmin ? 'Back to Admin Dashboard' : 'Back to Community Reports'}</span>
+          </button>
+        </div>
+
+        {/* Admin Badge */}
+        {isAdmin && (
+          <div className="mb-4">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#832E2E] text-white">
+              Admin View
+            </span>
+          </div>
+        )}
+
         <h1 className="text-3xl font-bold text-white mb-4">{issue.title}</h1>
         <div className="flex items-center gap-4 mb-4">
           <button
@@ -122,13 +159,13 @@ export default function IssueDetails() {
                 {issue.images.map((imgPath, idx) => (
                   <a
                     key={idx}
-                    href={`http://localhost:5000/${imgPath.replace(/\\/g, '/')}`}
+                    href={`${imgPath}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block"
                   >
                     <img
-                      src={`http://localhost:5000/${imgPath.replace(/\\/g, '/')}`}
+                      src={`${imgPath}`}
                       alt={`Issue image ${idx + 1}`}
                       className="w-40 h-40 object-cover rounded-lg border border-white/20 hover:scale-105 transition-transform shadow"
                     />
@@ -151,39 +188,45 @@ export default function IssueDetails() {
           
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => handleStatusUpdate('Received')}
-              disabled={isUpdatingStatus || issue.status === 'Received'}
+              onClick={() => handleStatusUpdate('open')}
+              disabled={isUpdatingStatus || issue.status === 'open'}
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                issue.status === 'Received' 
-                  ? 'bg-blue-600 text-white cursor-default' 
-                  : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                issue.status === 'open' 
+                  ? 'bg-red-600 text-white cursor-default' 
+                  : isAdmin 
+                    ? 'bg-red-600/20 text-red-300 border border-red-600/30 hover:bg-red-600/30' 
+                    : 'bg-red-100 text-red-800 hover:bg-red-200'
               }`}
             >
-              {isUpdatingStatus && issue.status === 'Received' ? 'Updating...' : 'Mark as Received'}
+              {isUpdatingStatus && issue.status === 'open' ? 'Updating...' : 'Mark as Open'}
             </button>
             
             <button
-              onClick={() => handleStatusUpdate('In Progress')}
-              disabled={isUpdatingStatus || issue.status === 'In Progress'}
+              onClick={() => handleStatusUpdate('in-progress')}
+              disabled={isUpdatingStatus || issue.status === 'in-progress'}
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                issue.status === 'In Progress' 
+                issue.status === 'in-progress' 
                   ? 'bg-yellow-600 text-white cursor-default' 
-                  : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                  : isAdmin 
+                    ? 'bg-yellow-600/20 text-yellow-300 border border-yellow-600/30 hover:bg-yellow-600/30' 
+                    : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
               }`}
             >
-              {isUpdatingStatus && issue.status === 'In Progress' ? 'Updating...' : 'Mark as In Progress'}
+              {isUpdatingStatus && issue.status === 'in-progress' ? 'Updating...' : 'Mark as In Progress'}
             </button>
             
             <button
-              onClick={() => handleStatusUpdate('Resolved')}
-              disabled={isUpdatingStatus || issue.status === 'Resolved'}
+              onClick={() => handleStatusUpdate('resolved')}
+              disabled={isUpdatingStatus || issue.status === 'resolved'}
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                issue.status === 'Resolved' 
+                issue.status === 'resolved' 
                   ? 'bg-green-600 text-white cursor-default' 
-                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+                  : isAdmin 
+                    ? 'bg-green-600/20 text-green-300 border border-green-600/30 hover:bg-green-600/30' 
+                    : 'bg-green-100 text-green-800 hover:bg-green-200'
               }`}
             >
-              {isUpdatingStatus && issue.status === 'Resolved' ? 'Updating...' : 'Mark as Resolved'}
+              {isUpdatingStatus && issue.status === 'resolved' ? 'Updating...' : 'Mark as Resolved'}
             </button>
           </div>
           

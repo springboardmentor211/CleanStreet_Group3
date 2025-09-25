@@ -75,8 +75,12 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'Token is not valid' });
     }
     
-    req.user = user;
-    console.log('User authenticated:', user.username);
+    // Add role information to user object for middleware chain
+    req.user = {
+      ...user.toObject(),
+      role: decoded.user.role || user.role || 'citizen'
+    };
+    console.log('User authenticated:', user.username, 'Role:', req.user.role);
     next();
   } catch (err) {
     console.error('Auth error:', err.message);
@@ -84,4 +88,15 @@ const auth = async (req, res, next) => {
   }
 };
 
-module.exports = { auth };
+const adminAuth = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    next();
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { auth, adminAuth };

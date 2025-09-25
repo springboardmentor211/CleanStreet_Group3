@@ -1,5 +1,5 @@
 // Ensure the API base URL doesn't end with a slash
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 
 interface ApiResponse<T = any> {
   success?: boolean;
@@ -117,8 +117,9 @@ export const authAPI = {
   },
 
   getCurrentUser: async (): Promise<any> => {
-    const response = await apiRequest<{ user: any }>('/auth/me');
-    return response.data?.user;
+    const response = await apiRequest<any>('/auth/me');
+    // Backend returns user directly, not wrapped in data object
+    return response;
   },
 
   updateProfile: async (profileData: {
@@ -131,7 +132,7 @@ export const authAPI = {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
-    return response.data?.user;
+    return response.data?.user || response;
   },
 
   forgotPassword: async (email: string): Promise<{ message: string }> => {
@@ -254,6 +255,52 @@ export const issuesAPI = {
 
   getDashboardStats: async () => {
     return apiRequest('/issues/stats/dashboard');
+  },
+};
+
+// Admin API
+export const adminAPI = {
+  getStats: async () => {
+    return apiRequest('/admin/stats');
+  },
+
+  getAllIssues: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    category?: string;
+    priority?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.status) query.append('status', params.status);
+    if (params?.category) query.append('category', params.category);
+    if (params?.priority) query.append('priority', params.priority);
+    if (params?.sortBy) query.append('sortBy', params.sortBy);
+    if (params?.sortOrder) query.append('sortOrder', params.sortOrder);
+
+    return apiRequest(`/admin/issues?${query.toString()}`);
+  },
+
+  updateIssueStatus: async (issueId: string, status: string, estimatedResolution?: string) => {
+    return apiRequest(`/admin/issues/${issueId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, estimatedResolution }),
+    });
+  },
+
+  assignIssue: async (issueId: string, assignedTo: string) => {
+    return apiRequest(`/admin/issues/${issueId}/assign`, {
+      method: 'PUT',
+      body: JSON.stringify({ assignedTo }),
+    });
+  },
+
+  getAllUsers: async () => {
+    return apiRequest('/admin/users');
   },
 };
 

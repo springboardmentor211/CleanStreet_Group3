@@ -47,22 +47,45 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const initializeAuth = async () => {
       const storedToken = getAuthToken();
-      setToken(storedToken);
-      if (storedToken) {
+      const storedUser = localStorage.getItem('currentUser');
+      
+      console.log('Initializing auth...');
+      console.log('Stored token:', storedToken);
+      console.log('Stored user:', storedUser);
+      
+      if (storedToken && storedUser) {
         try {
+          // First try to use stored user data for faster loading
+          const parsedUser = JSON.parse(storedUser);
+          setToken(storedToken);
+          setUser(parsedUser);
+          setUserInfo(parsedUser);
+          
+          // Then verify with server in background
           const userData = await authAPI.getCurrentUser();
-          setUser(userData);
-          setUserInfo(userData);
+          console.log('Server user data:', userData);
+          
+          if (userData && userData.id) {
+            setUser(userData);
+            setUserInfo(userData);
+            // Update localStorage with fresh data
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+          }
         } catch (error) {
           console.error('Failed to get current user:', error);
+          // Clear invalid authentication data
           authAPI.logout();
+          localStorage.removeItem('currentUser');
           setToken(null);
           setUser(null);
           setUserInfo(null);
         }
       } else {
+        // No stored authentication data
+        console.log('No stored auth data found');
         setUser(null);
         setUserInfo(null);
+        setToken(null);
       }
       setLoading(false);
     };
@@ -113,12 +136,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
-  authAPI.logout();
-  setUser(null);
-  setUserInfo(null);
-  setToken(null);
-  setLoginError(null);
-  setLoginSuccess(false);
+    authAPI.logout();
+    localStorage.removeItem('currentUser');
+    setUser(null);
+    setUserInfo(null);
+    setToken(null);
+    setLoginError(null);
+    setLoginSuccess(false);
   };
 
   const value = {

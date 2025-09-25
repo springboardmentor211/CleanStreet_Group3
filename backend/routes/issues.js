@@ -287,14 +287,14 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/stats/dashboard', async (req, res) => {
   try {
     const totalIssues = await Issue.countDocuments();
-    const ReceivedIssues = await Issue.countDocuments({ status: 'Received' });
-    const inProgressIssues = await Issue.countDocuments({ status: 'In Progress' });
-    const resolvedIssues = await Issue.countDocuments({ status: 'Resolved' });
+    const openIssues = await Issue.countDocuments({ status: 'open' });
+    const inProgressIssues = await Issue.countDocuments({ status: 'in-progress' });
+    const resolvedIssues = await Issue.countDocuments({ status: 'resolved' });
 
     // Get recent activity (last 10 resolved or updated issues)
     const recentActivity = await Issue.find({
       $or: [
-        { status: 'Resolved' },
+        { status: 'resolved' },
         { updatedAt: { $gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } }
       ]
     })
@@ -304,7 +304,7 @@ router.get('/stats/dashboard', async (req, res) => {
 
     res.json({
       total: totalIssues,
-      Received: ReceivedIssues,
+      open: openIssues,
       inProgress: inProgressIssues,
       resolved: resolvedIssues,
       recentActivity
