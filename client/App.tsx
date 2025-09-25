@@ -24,7 +24,6 @@ import Profile from "./pages/Profile";
 import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
 import Maps from "./pages/Maps";
-// IMPORTANT: Use correct casing for AdminDashboard import. File must be AdminDashboard.tsx
 import AdminDashboard from "./pages/AdminDashboard";
 
 
