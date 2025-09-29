@@ -208,6 +208,29 @@ export const authAPI = {
     }
     return { message: response.message || 'Password reset successful' };
   },
+
+  uploadProfileImage: async (imageFile: File): Promise<{ profileImage: string; user: any }> => {
+    const token = getAuthToken();
+    
+    const formData = new FormData();
+    formData.append('profileImage', imageFile);
+    
+    const response = await fetch(`${API_BASE_URL}/auth/upload-profile-image`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  },
 };
 
 // Issues API

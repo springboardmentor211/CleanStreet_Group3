@@ -1,11 +1,12 @@
 const cloudinary = require('cloudinary').v2;
+const { 
+  CLOUDINARY_CREDENTIALS, 
+  CLOUDINARY_FOLDERS, 
+  TRANSFORMATION_PRESETS 
+} = require('../config/cloudinary-config');
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: 'doiho5wlh',
-  api_key: '479196295749123',
-  api_secret: 'rXOdnxA0oNTxxuB4fl92TkCsO5o'
-});
+// Configure Cloudinary using configuration from config file
+cloudinary.config(CLOUDINARY_CREDENTIALS);
 
 /**
  * Upload image to Cloudinary
@@ -14,15 +15,12 @@ cloudinary.config({
  * @param {Object} options - Additional upload options
  * @returns {Promise} Cloudinary upload result
  */
-const uploadImage = (buffer, folder = 'cleanstreet', options = {}) => {
+const uploadImage = (buffer, folder = CLOUDINARY_FOLDERS.general, options = {}) => {
   return new Promise((resolve, reject) => {
     const defaultOptions = {
       resource_type: 'image',
       folder: folder,
-      transformation: [
-        { width: 1000, height: 1000, crop: 'limit' },
-        { quality: 'auto:good' }
-      ]
+      transformation: TRANSFORMATION_PRESETS.general
     };
 
     const uploadOptions = { ...defaultOptions, ...options };
@@ -55,11 +53,8 @@ const deleteImage = (publicId) => {
  * @returns {Promise} Cloudinary upload result
  */
 const uploadAvatar = (buffer) => {
-  return uploadImage(buffer, 'cleanstreet/avatars', {
-    transformation: [
-      { width: 200, height: 200, crop: 'fill', gravity: 'face' },
-      { quality: 'auto:good' }
-    ]
+  return uploadImage(buffer, CLOUDINARY_FOLDERS.avatars, {
+    transformation: TRANSFORMATION_PRESETS.avatar
   });
 };
 
@@ -69,11 +64,8 @@ const uploadAvatar = (buffer) => {
  * @returns {Promise} Cloudinary upload result
  */
 const uploadIssueImage = (buffer) => {
-  return uploadImage(buffer, 'cleanstreet/issues', {
-    transformation: [
-      { width: 800, height: 600, crop: 'limit' },
-      { quality: 'auto:good' }
-    ]
+  return uploadImage(buffer, CLOUDINARY_FOLDERS.issues, {
+    transformation: TRANSFORMATION_PRESETS.issueImage
   });
 };
 

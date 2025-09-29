@@ -40,6 +40,14 @@ const UserSchema = new mongoose.Schema({
     type: String,
     maxlength: 500
   },
+  profileImage: {
+    type: String,
+    default: null
+  },
+  profileImagePublicId: {
+    type: String,
+    default: null
+  },
   role: {
     type: String,
     enum: ['citizen', 'admin'],

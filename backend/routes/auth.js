@@ -5,6 +5,8 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { sendPasswordResetEmail } = require('../utils/email');
+const upload = require('../middleware/upload');
+const { uploadAvatar, deleteImage } = require('../utils/cloudinary');
 const router = express.Router();
 
 // @route   POST api/auth/register
@@ -356,8 +358,9 @@ router.put('/update-profile', [
   if (bio) profileFields.bio = bio;
 
   try {
+    const userId = req.user.id || req.user._id;
     let user = await User.findByIdAndUpdate(
-      req.user.id,
+      userId,
       { $set: profileFields },
       { new: true }
     ).select('-password');
@@ -417,9 +420,10 @@ router.get('/debug/user/:id', async (req, res) => {
 router.put('/update-profile', auth, async (req, res) => {
   try {
     const { fullName, phoneNumber, location, bio } = req.body;
+    const userId = req.user.id || req.user._id;
     
     const user = await User.findByIdAndUpdate(
-      req.user.id,
+      userId,
       { fullName, phoneNumber, location, bio },
       { new: true }
     ).select('-password');
@@ -428,6 +432,64 @@ router.put('/update-profile', auth, async (req, res) => {
   } catch (error) {
     console.error(error.message);
     res.status(500).send('Server error');
+  }
+});
+
+// Upload profile image
+router.post('/upload-profile-image', [auth, upload.single('profileImage')], async (req, res) => {
+  try {
+    console.log('=== Profile Image Upload Route Called ===');
+    console.log('File received:', !!req.file);
+    console.log('User from auth middleware:', req.user ? 'Present' : 'Missing');
+    
+    if (!req.file) {
+      console.log('No file in request');
+      return res.status(400).json({ message: 'No profile image provided' });
+    }
+    
+    // Find the user first to get current profile image
+    const userId = req.user.id || req.user._id;
+    console.log('Profile image upload - User ID:', userId);
+    console.log('User ID type:', typeof userId);
+    console.log('req.user object keys:', Object.keys(req.user || {}));
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('User not found for profile image upload with ID:', userId);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Delete old profile image if it exists
+    if (user.profileImagePublicId) {
+      try {
+        await deleteImage(user.profileImagePublicId);
+      } catch (deleteError) {
+        console.error('Error deleting old profile image:', deleteError);
+        // Continue with upload even if deletion fails
+      }
+    }
+    
+    // Upload new profile image to Cloudinary
+    const result = await uploadAvatar(req.file.buffer);
+    
+    // Update user with new profile image
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        profileImage: result.secure_url,
+        profileImagePublicId: result.public_id
+      },
+      { new: true }
+    ).select('-password');
+    
+    res.json({
+      message: 'Profile image uploaded successfully',
+      profileImage: result.secure_url,
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Profile image upload error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

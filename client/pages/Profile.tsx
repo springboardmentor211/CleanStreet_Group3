@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
-import { Edit, Camera, Lock, Shield, User, BarChart3 } from "lucide-react";
+import { Edit, Camera, Lock, Shield, User, BarChart3, Upload } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { authAPI, issuesAPI, debugAPI } from "@/lib/api";
 
@@ -21,7 +21,8 @@ export default function Profile() {
     bio: "",
     role: "",
     joinDate: "",
-    _id: ""
+    _id: "",
+    profileImage: ""
   });
   const [userStats, setUserStats] = useState({
     totalIssues: 0,
@@ -29,6 +30,8 @@ export default function Profile() {
     openIssues: 0,
     inProgressIssues: 0
   });
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -125,7 +128,8 @@ export default function Profile() {
             bio: userData.bio || "",
             role: userData.role || "citizen",
             joinDate: userData.joinDate || userData.createdAt || "",
-            _id: userData._id || ""
+            _id: userData._id || "",
+            profileImage: userData.profileImage || ""
           };
           
           console.log("=== Processed User Info ===");
@@ -271,6 +275,62 @@ export default function Profile() {
     setUserInfo(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUpdateMessage({ type: 'error', text: 'Please select a valid image file.' });
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setUpdateMessage({ type: 'error', text: 'Image file size must be less than 5MB.' });
+      return;
+    }
+
+    try {
+      setImageUploading(true);
+      setUpdateMessage(null);
+
+      const response = await authAPI.uploadProfileImage(file);
+      
+      // Update local state with the new profile image
+      setUserInfo(prev => ({
+        ...prev,
+        profileImage: response.profileImage
+      }));
+
+      // Update localStorage as well
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        const updatedStoredUser = { ...parsedUser, profileImage: response.profileImage };
+        localStorage.setItem('currentUser', JSON.stringify(updatedStoredUser));
+      }
+
+      setUpdateMessage({ type: 'success', text: 'Profile image updated successfully!' });
+    } catch (error) {
+      console.error('Profile image upload error:', error);
+      setUpdateMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to upload profile image. Please try again.' 
+      });
+    } finally {
+      setImageUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleCameraClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const formatJoinDate = (dateString: string) => {
     if (!dateString) return "Recently joined";
     
@@ -353,19 +413,42 @@ export default function Profile() {
               <div className="flex flex-col items-center text-center pt-12">
                 {/* Avatar */}
                 <div className="relative mb-6">
-                  <div className="w-[150px] h-[150px] rounded-full bg-cs-blue-light flex items-center justify-center">
-                    <span className="text-cs-blue-primary text-[32px] font-bold">
-                      {userInfo.fullName 
-                        ? userInfo.fullName.split(' ').map(n => n[0]).join('').toUpperCase()
-                        : userInfo.username 
-                        ? userInfo.username.slice(0, 2).toUpperCase()
-                        : '?'
-                      }
-                    </span>
+                  <div className="w-[150px] h-[150px] rounded-full bg-cs-blue-light flex items-center justify-center overflow-hidden">
+                    {userInfo.profileImage ? (
+                      <img 
+                        src={userInfo.profileImage} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-cs-blue-primary text-[32px] font-bold">
+                        {userInfo.fullName 
+                          ? userInfo.fullName.split(' ').map(n => n[0]).join('').toUpperCase()
+                          : userInfo.username 
+                          ? userInfo.username.slice(0, 2).toUpperCase()
+                          : '?'
+                        }
+                      </span>
+                    )}
                   </div>
-                  <div className="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                    <Camera className="w-6 h-6 text-gray-600" />
-                  </div>
+                  <button
+                    onClick={handleCameraClick}
+                    disabled={imageUploading}
+                    className="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-gray-300 hover:bg-gray-400 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {imageUploading ? (
+                      <div className="w-6 h-6 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Camera className="w-6 h-6 text-gray-600" />
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
                 </div>
 
                 {/* User Info */}

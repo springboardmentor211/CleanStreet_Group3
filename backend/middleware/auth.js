@@ -90,6 +90,7 @@ const auth = async (req, res, next) => {
     // Add role information to user object for middleware chain
     req.user = {
       ...user.toObject(),
+      id: user._id.toString(), // Ensure we have 'id' field pointing to MongoDB's '_id'
       role: decoded.user.role || user.role || 'citizen'
     };
     console.log('User authenticated:', user.username, 'Role:', req.user.role);

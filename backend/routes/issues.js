@@ -111,7 +111,7 @@ router.post('/', [
       location,
       images,
       priority: priority || 'Medium',
-      reportedBy: req.user.id
+      reportedBy: req.user.id || req.user._id
     });
 
     await issue.save();
@@ -135,7 +135,8 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     // Check if user is the reporter or an admin
-    if (issue.reportedBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    const userId = req.user.id || req.user._id;
+    if (issue.reportedBy.toString() !== userId && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
@@ -166,7 +167,8 @@ router.delete('/:id', auth, async (req, res) => {
     }
 
     // Check if user is the reporter or an admin
-    if (issue.reportedBy.toString() !== req.user.id && req.user.role !== 'admin') {
+    const userIdForDelete = req.user.id || req.user._id;
+    if (issue.reportedBy.toString() !== userIdForDelete && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
@@ -190,7 +192,7 @@ router.post('/:id/vote', auth, async (req, res) => {
     }
 
     const { type } = req.body; // 'up' or 'down'
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
 
     // Check if user already voted
     const hasVoted = issue.voters.includes(userId);
@@ -241,7 +243,7 @@ router.post('/:id/comment', [
     const { text } = req.body;
 
     issue.comments.push({
-      user: req.user.id,
+      user: req.user.id || req.user._id,
       text
     });
 
