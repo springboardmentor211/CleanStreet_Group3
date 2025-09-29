@@ -1,4 +1,9 @@
+// Enhanced Admin Dashboard with Download Functionality
+// To enable full download features, install these libraries:
+// npm install html2canvas jspdf
+
 import { useState, useEffect } from 'react';
+import html2canvas from 'html2canvas';
 import { useAuth } from '@/lib/auth-context';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { adminAPI } from '@/lib/api';
@@ -6,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Users, 
   FileText, 
@@ -19,7 +27,11 @@ import {
   Eye,
   Download,
   FileImage,
-  FileBarChart
+  FileBarChart,
+  Ban,
+  UserCheck,
+  Shield,
+  AlertCircle
 } from 'lucide-react';
 
 interface AdminStats {
@@ -60,6 +72,13 @@ interface User {
   role: string;
   createdAt: string;
   isActive: boolean;
+  isBlocked?: boolean;
+  blockedAt?: string;
+  blockedBy?: {
+    username: string;
+    fullName: string;
+  };
+  blockReason?: string;
 }
 
 const AdminDashboard = () => {
@@ -71,9 +90,14 @@ const AdminDashboard = () => {
   const [trends, setTrends] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [downloadingChart, setDownloadingChart] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [issuesPerPage] = useState(10);
+  const [blockingUserId, setBlockingUserId] = useState<string | null>(null);
+  const [blockReason, setBlockReason] = useState('');
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Redirect if not admin
   if (!user || user.role !== 'admin') {
@@ -157,6 +181,32 @@ const AdminDashboard = () => {
     setCurrentPage(page);
   };
 
+  const handleBlockUser = async (user: User, block: boolean, reason?: string) => {
+    try {
+      setBlockingUserId(user._id);
+      await adminAPI.blockUser(user._id, block, reason);
+      
+      // Refresh users data
+      fetchAdminData();
+      
+      // Close dialog and reset state
+      setShowBlockDialog(false);
+      setSelectedUser(null);
+      setBlockReason('');
+      
+    } catch (err) {
+      console.error('Error blocking/unblocking user:', err);
+    } finally {
+      setBlockingUserId(null);
+    }
+  };
+
+  const openBlockDialog = (user: User) => {
+    setSelectedUser(user);
+    setShowBlockDialog(true);
+    setBlockReason('Miscellaneous reports');
+  };
+
   // Download utilities
   const downloadCSV = (data: any[], filename: string) => {
     if (!data || data.length === 0) return;
@@ -178,42 +228,196 @@ const AdminDashboard = () => {
     document.body.removeChild(link);
   };
 
-  const downloadChartAsPNG = (elementId: string, filename: string) => {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-
-    // Use html2canvas library (you'd need to install it)
-    // For now, we'll create a simple canvas representation
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = element.offsetWidth;
-    canvas.height = element.offsetHeight;
-    
-    if (ctx) {
-      ctx.fillStyle = '#0B0F19';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '16px Arial';
-      ctx.fillText('Chart Image - ' + filename, 20, 30);
-    }
-    
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${filename}.png`;
-        link.click();
-        URL.revokeObjectURL(url);
+  const downloadChartAsPNG = async (elementId: string, filename: string) => {
+    try {
+      setDownloadingChart(elementId);
+      console.log('Starting image download for:', elementId);
+      
+      const element = document.getElementById(elementId);
+      if (!element) {
+        alert('Chart element not found');
+        setDownloadingChart(null);
+        return;
       }
-    });
+
+      console.log('Element found, starting html2canvas...');
+
+      // Use the imported html2canvas with simpler options first
+      const canvas = await html2canvas(element, {
+        backgroundColor: '#0B0F19',
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        logging: true
+      });
+      
+      console.log('Canvas created successfully:', canvas.width, 'x', canvas.height);
+      
+      canvas.toBlob((blob: Blob | null) => {
+        console.log('Blob created:', blob);
+        if (blob) {
+          console.log('Creating download link...');
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${filename}.png`;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          console.log('Download triggered successfully');
+        } else {
+          console.error('Failed to create blob');
+          alert('Failed to create image blob');
+        }
+        setDownloadingChart(null);
+      }, 'image/png');
+
+    } catch (error) {
+      console.error('Error downloading chart:', error);
+      
+      // Fallback: Try SVG export for charts with SVG elements
+      try {
+        const element = document.getElementById(elementId);
+        if (element) {
+          const svgs = element.querySelectorAll('svg');
+          if (svgs.length > 0) {
+            const svg = svgs[0];
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svg);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            canvas.width = svg.getBoundingClientRect().width * 2;
+            canvas.height = svg.getBoundingClientRect().height * 2;
+            
+            img.onload = () => {
+              if (ctx) {
+                ctx.fillStyle = '#0B0F19';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${filename}.png`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }
+                  setDownloadingChart(null);
+                });
+              }
+            };
+            
+            img.src = 'data:image/svg+xml;base64,' + btoa(svgString);
+          } else {
+            alert('Unable to capture chart image. Please try again.');
+            setDownloadingChart(null);
+          }
+        } else {
+          setDownloadingChart(null);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError);
+        alert('Error capturing chart image');
+        setDownloadingChart(null);
+      }
+    }
   };
 
-  const downloadPageAsPDF = () => {
-    // Simple implementation - in production you'd use jsPDF or similar
-    const content = document.getElementById('analytics-content');
-    if (content) {
-      window.print();
+  const downloadPageAsPDF = async () => {
+    try {
+      // Check if jsPDF is available (you can install it with: npm install jspdf)
+      if (typeof window !== 'undefined' && (window as any).jsPDF) {
+        const { jsPDF } = (window as any);
+        const doc = new jsPDF('p', 'mm', 'a4');
+        
+        // Add title
+        doc.setFontSize(20);
+        doc.text('CleanStreet Analytics Report', 20, 20);
+        
+        // Add date
+        doc.setFontSize(12);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 35);
+        
+        // Add stats summary
+        if (stats) {
+          doc.text(`Total Users: ${stats.totalUsers}`, 20, 50);
+          doc.text(`Total Issues: ${stats.totalIssues}`, 20, 60);
+          doc.text(`Recent Registrations: ${stats.recentRegistrations}`, 20, 70);
+        }
+        
+        // Add category data
+        if (stats?.issuesByCategory) {
+          doc.text('Issues by Category:', 20, 90);
+          stats.issuesByCategory.forEach((item, index) => {
+            doc.text(`${item._id}: ${item.count}`, 25, 100 + (index * 10));
+          });
+        }
+        
+        // Add status data
+        if (stats?.issuesByStatus) {
+          doc.text('Issues by Status:', 20, 140);
+          stats.issuesByStatus.forEach((item, index) => {
+            doc.text(`${item._id}: ${item.count}`, 25, 150 + (index * 10));
+          });
+        }
+        
+        // Save the PDF
+        doc.save('cleanstreet-analytics-report.pdf');
+      } else {
+        // Fallback to print dialog
+        const originalTitle = document.title;
+        document.title = 'CleanStreet Analytics Report';
+        
+        // Create a print-friendly version
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>CleanStreet Analytics Report</title>
+                <style>
+                  body { font-family: Arial, sans-serif; margin: 20px; }
+                  .header { text-align: center; margin-bottom: 30px; }
+                  .section { margin-bottom: 20px; }
+                  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+                  @media print { body { margin: 0; } }
+                </style>
+              </head>
+              <body>
+                <div class="header">
+                  <h1>CleanStreet Analytics Report</h1>
+                  <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                </div>
+                <div class="stats">
+                  <div class="section">
+                    <h3>Summary Statistics</h3>
+                    <p>Total Users: ${stats?.totalUsers || 0}</p>
+                    <p>Total Issues: ${stats?.totalIssues || 0}</p>
+                    <p>Recent Registrations: ${stats?.recentRegistrations || 0}</p>
+                  </div>
+                  <div class="section">
+                    <h3>Issues by Category</h3>
+                    ${stats?.issuesByCategory?.map(item => `<p>${item._id}: ${item.count}</p>`).join('') || '<p>No data available</p>'}
+                  </div>
+                </div>
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+          printWindow.print();
+        }
+        
+        document.title = originalTitle;
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF report');
     }
   };
 
@@ -264,11 +468,115 @@ const AdminDashboard = () => {
     setTimeout(() => downloadCSV(getPriorityCSVData(), 'priority-distribution'), 300);
   };
 
-  const downloadAllCharts = () => {
-    downloadChartAsPNG('category-chart', 'category-chart');
-    setTimeout(() => downloadChartAsPNG('status-chart', 'status-chart'), 100);
-    setTimeout(() => downloadChartAsPNG('trends-chart', 'trends-chart'), 200);
-    setTimeout(() => downloadChartAsPNG('priority-chart', 'priority-chart'), 300);
+  // Simple test for html2canvas
+  const testHtml2Canvas = async () => {
+    try {
+      console.log('Testing html2canvas...');
+      const testDiv = document.createElement('div');
+      testDiv.innerHTML = 'Test';
+      testDiv.style.padding = '20px';
+      testDiv.style.background = 'blue';
+      testDiv.style.color = 'white';
+      document.body.appendChild(testDiv);
+      
+      const canvas = await html2canvas(testDiv);
+      document.body.removeChild(testDiv);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'test.png';
+          link.click();
+          URL.revokeObjectURL(url);
+          console.log('html2canvas test successful!');
+        }
+      });
+    } catch (error) {
+      console.error('html2canvas test failed:', error);
+    }
+  };
+
+  // Alternative download method using canvas directly
+  const downloadChartAsImage = (elementId: string, filename: string) => {
+    try {
+      setDownloadingChart(elementId);
+      console.log('Trying alternative download method for:', elementId);
+      
+      const element = document.getElementById(elementId);
+      if (!element) {
+        alert('Chart element not found');
+        setDownloadingChart(null);
+        return;
+      }
+
+      // Try direct canvas approach for SVG charts
+      const svgs = element.querySelectorAll('svg');
+      if (svgs.length > 0) {
+        const svg = svgs[0];
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          canvas.width = svg.getBoundingClientRect().width * 2;
+          canvas.height = svg.getBoundingClientRect().height * 2;
+          
+          if (ctx) {
+            ctx.fillStyle = '#0B0F19';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${filename}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+                console.log('SVG download completed');
+              }
+              setDownloadingChart(null);
+            });
+          }
+          URL.revokeObjectURL(svgUrl);
+        };
+        
+        img.src = svgUrl;
+      } else {
+        // Fallback to html2canvas
+        downloadChartAsPNG(elementId, filename);
+      }
+    } catch (error) {
+      console.error('Error in alternative download:', error);
+      setDownloadingChart(null);
+    }
+  };
+
+  const downloadAllCharts = async () => {
+    try {
+      await downloadChartAsPNG('category-chart', 'category-chart');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await downloadChartAsPNG('status-chart', 'status-chart');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await downloadChartAsPNG('trends-chart', 'trends-chart');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await downloadChartAsPNG('priority-chart', 'priority-chart');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await downloadChartAsPNG('performance-chart', 'performance-chart');
+    } catch (error) {
+      console.error('Error downloading all charts:', error);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -327,7 +635,7 @@ const AdminDashboard = () => {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <Card className="bg-background border-white/30">
               <CardContent className="p-6">
                 <div className="flex items-center">
@@ -335,6 +643,18 @@ const AdminDashboard = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-white/60">Total Users</p>
                     <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-background border-white/30">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <Ban className="h-8 w-8 text-red-400" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-white/60">Blocked Users</p>
+                    <p className="text-2xl font-bold text-white">{users.filter(u => u.isBlocked).length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -385,6 +705,10 @@ const AdminDashboard = () => {
           <TabsList className="bg-[#111827] border-white/30">
             <TabsTrigger value="issues" className="data-[state=active]:bg-[#2759C5] data-[state=active]:text-white text-white/60">Issues Management</TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-[#2759C5] data-[state=active]:text-white text-white/60">Users Management</TabsTrigger>
+            <TabsTrigger value="blocked" className="data-[state=active]:bg-[#2759C5] data-[state=active]:text-white text-white/60">
+              <Ban className="h-4 w-4 mr-1" />
+              Blocked Users
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="data-[state=active]:bg-[#2759C5] data-[state=active]:text-white text-white/60">Analytics</TabsTrigger>
           </TabsList>
 
@@ -518,32 +842,168 @@ const AdminDashboard = () => {
           <TabsContent value="users">
             <Card className="bg-background border-white/30">
               <CardHeader>
-                <CardTitle className="text-white">Users Management</CardTitle>
+                <CardTitle className="text-white">
+                  Users Management ({users.filter(user => user.role !== 'admin' && !user.isBlocked).length} users)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {users.map((user) => (
+                  {users.filter(user => user.role !== 'admin' && !user.isBlocked).length === 0 ? (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 text-white/30 mx-auto mb-4" />
+                      <p className="text-white/60 text-lg">No active users found</p>
+                      <p className="text-white/40 text-sm">Active users will appear here when they register</p>
+                    </div>
+                  ) : (
+                    users.filter(user => user.role !== 'admin' && !user.isBlocked).map((user) => (
                     <div key={user._id} className="border border-white/30 rounded-lg p-4 bg-[#111827]">
                       <div className="flex justify-between items-start">
-                        <div>
+                        <div className="flex-1">
                           <h3 className="font-semibold text-white">{user.fullName}</h3>
                           <p className="text-white/60">@{user.username}</p>
                           <p className="text-white/60">{user.email}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className={user.role === 'admin' ? 'bg-[#832E2E] text-white' : 'bg-[#2759C5] text-white'}>
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <Badge variant="secondary" className="bg-[#2759C5] text-white">
                               {user.role}
                             </Badge>
                             <Badge variant={user.isActive ? 'default' : 'outline'} className={user.isActive ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'}>
                               {user.isActive ? 'Active' : 'Inactive'}
                             </Badge>
+                            {user.isBlocked && (
+                              <Badge className="bg-red-600/20 text-red-300 border border-red-600/30 flex items-center gap-1">
+                                <Ban className="h-3 w-3" />
+                                Blocked
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-white/50 mt-1">
                             Joined: {new Date(user.createdAt).toLocaleDateString()}
                           </p>
+                          {user.isBlocked && user.blockedAt && (
+                            <div className="mt-2 text-sm text-red-300/80">
+                              <p>Blocked: {new Date(user.blockedAt).toLocaleDateString()}</p>
+                              {user.blockedBy && (
+                                <p>By: {user.blockedBy.fullName}</p>
+                              )}
+                              {user.blockReason && (
+                                <p>Reason: {user.blockReason}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {user.isBlocked ? (
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
+                              onClick={() => handleBlockUser(user, false)}
+                              disabled={blockingUserId === user._id}
+                            >
+                              {blockingUserId === user._id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b border-white" />
+                              ) : (
+                                <UserCheck className="h-3 w-3" />
+                              )}
+                              Unblock
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white flex items-center gap-1"
+                              onClick={() => openBlockDialog(user)}
+                              disabled={blockingUserId === user._id}
+                            >
+                              {blockingUserId === user._id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b border-current" />
+                              ) : (
+                                <Ban className="h-3 w-3" />
+                              )}
+                              Block User
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="blocked">
+            <Card className="bg-background border-white/30">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Ban className="h-5 w-5 text-red-400" />
+                  Blocked Users ({users.filter(user => user.isBlocked).length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {users.filter(user => user.isBlocked).length === 0 ? (
+                    <div className="text-center py-8">
+                      <Shield className="h-12 w-12 text-white/30 mx-auto mb-4" />
+                      <p className="text-white/60 text-lg">No blocked users</p>
+                      <p className="text-white/40 text-sm">Users blocked for miscellaneous reports will appear here</p>
+                    </div>
+                  ) : (
+                    users.filter(user => user.isBlocked).map((user) => (
+                      <div key={user._id} className="border border-red-600/30 rounded-lg p-4 bg-red-900/10">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white">{user.fullName}</h3>
+                            <p className="text-white/60">@{user.username}</p>
+                            <p className="text-white/60">{user.email}</p>
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <Badge variant="secondary" className="bg-[#2759C5] text-white">
+                                {user.role}
+                              </Badge>
+                              <Badge className="bg-red-600/20 text-red-300 border border-red-600/30 flex items-center gap-1">
+                                <Ban className="h-3 w-3" />
+                                Blocked
+                              </Badge>
+                            </div>
+                            <div className="mt-3 text-sm space-y-1">
+                              <p className="text-white/50">
+                                Joined: {new Date(user.createdAt).toLocaleDateString()}
+                              </p>
+                              {user.blockedAt && (
+                                <p className="text-red-300/80">
+                                  Blocked: {new Date(user.blockedAt).toLocaleDateString()}
+                                </p>
+                              )}
+                              {user.blockedBy && (
+                                <p className="text-red-300/80">
+                                  By: {user.blockedBy.fullName}
+                                </p>
+                              )}
+                              {user.blockReason && (
+                                <p className="text-red-300/80">
+                                  Reason: {user.blockReason}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
+                              onClick={() => handleBlockUser(user, false)}
+                              disabled={blockingUserId === user._id}
+                            >
+                              {blockingUserId === user._id ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b border-white" />
+                              ) : (
+                                <UserCheck className="h-3 w-3" />
+                              )}
+                              Unblock
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -564,6 +1024,14 @@ const AdminDashboard = () => {
                     <Download className="h-4 w-4" />
                     Download All CSVs
                   </Button>
+                  {/* <Button
+                    onClick={testHtml2Canvas}
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500 text-red-400 hover:bg-red-600 hover:border-red-600 hover:text-white flex items-center gap-2"
+                  >
+                    Test HTML2Canvas
+                  </Button> */}
                   <Button
                     onClick={downloadAllCharts}
                     variant="outline"
@@ -603,13 +1071,21 @@ const AdminDashboard = () => {
                         <Download className="h-3 w-3" />
                       </Button>
                       <Button
-                        onClick={() => downloadChartAsPNG('category-chart', 'category-chart')}
+                        onClick={() => {
+                          console.log('Image download button clicked');
+                          downloadChartAsImage('category-chart', 'category-chart');
+                        }}
                         variant="outline"
                         size="sm"
                         className="border-white/30 text-white hover:bg-[#3576E0] hover:border-[#3576E0]"
                         title="Download as Image"
+                        disabled={downloadingChart === 'category-chart'}
                       >
-                        <FileImage className="h-3 w-3" />
+                        {downloadingChart === 'category-chart' ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b border-white" />
+                        ) : (
+                          <FileImage className="h-3 w-3" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -950,6 +1426,77 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Block User Confirmation Dialog */}
+      <AlertDialog open={showBlockDialog} onOpenChange={setShowBlockDialog}>
+        <AlertDialogContent className="bg-[#111827] border-white/30 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-400">
+              <Shield className="h-5 w-5" />
+              Block User
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-white/60">
+              Are you sure you want to block {selectedUser?.fullName} (@{selectedUser?.username})?
+              <br />
+              This will hide all their reports from the public view.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="blockReason" className="text-sm font-medium text-white">
+                Block Reason
+              </Label>
+              <Input
+                id="blockReason"
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                placeholder="Enter reason for blocking..."
+                className="bg-[#1f2937] border-white/30 text-white placeholder:text-white/40"
+                maxLength={500}
+              />
+            </div>
+            
+            <div className="bg-red-900/20 border border-red-600/30 rounded-md p-3">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-red-300">
+                  <p className="font-medium">Warning:</p>
+                  <ul className="mt-1 space-y-1 text-xs">
+                    <li>• All user's reports will be hidden from public view</li>
+                    <li>• User will be marked as blocked in the system</li>
+                    <li>• This action can be reversed by unblocking the user</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              className="bg-transparent border-white/30 text-white hover:bg-white/10"
+              onClick={() => {
+                setShowBlockDialog(false);
+                setSelectedUser(null);
+                setBlockReason('');
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => selectedUser && handleBlockUser(selectedUser, true, blockReason)}
+              disabled={!blockReason.trim()}
+            >
+              {blockingUserId === selectedUser?._id ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b border-white" />
+              ) : (
+                'Block User'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

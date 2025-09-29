@@ -186,49 +186,46 @@ export default function IssueDetails() {
             </span>
           </div>
           
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => handleStatusUpdate('open')}
-              disabled={isUpdatingStatus || issue.status === 'open'}
-              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                issue.status === 'open' 
-                  ? 'bg-red-600 text-white cursor-default' 
-                  : isAdmin 
-                    ? 'bg-red-600/20 text-red-300 border border-red-600/30 hover:bg-red-600/30' 
-                    : 'bg-red-100 text-red-800 hover:bg-red-200'
-              }`}
-            >
-              {isUpdatingStatus && issue.status === 'open' ? 'Updating...' : 'Mark as Open'}
-            </button>
-            
-            <button
-              onClick={() => handleStatusUpdate('in-progress')}
-              disabled={isUpdatingStatus || issue.status === 'in-progress'}
-              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                issue.status === 'in-progress' 
-                  ? 'bg-yellow-600 text-white cursor-default' 
-                  : isAdmin 
-                    ? 'bg-yellow-600/20 text-yellow-300 border border-yellow-600/30 hover:bg-yellow-600/30' 
-                    : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-              }`}
-            >
-              {isUpdatingStatus && issue.status === 'in-progress' ? 'Updating...' : 'Mark as In Progress'}
-            </button>
-            
-            <button
-              onClick={() => handleStatusUpdate('resolved')}
-              disabled={isUpdatingStatus || issue.status === 'resolved'}
-              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                issue.status === 'resolved' 
-                  ? 'bg-green-600 text-white cursor-default' 
-                  : isAdmin 
-                    ? 'bg-green-600/20 text-green-300 border border-green-600/30 hover:bg-green-600/30' 
-                    : 'bg-green-100 text-green-800 hover:bg-green-200'
-              }`}
-            >
-              {isUpdatingStatus && issue.status === 'resolved' ? 'Updating...' : 'Mark as Resolved'}
-            </button>
-          </div>
+          {/* Only show status update buttons to admin users */}
+          {isAdmin && (
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => handleStatusUpdate('open')}
+                disabled={isUpdatingStatus || issue.status === 'open'}
+                className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                  issue.status === 'open' 
+                    ? 'bg-red-600 text-white cursor-default' 
+                    : 'bg-red-600/20 text-red-300 border border-red-600/30 hover:bg-red-600/30'
+                }`}
+              >
+                {isUpdatingStatus && issue.status === 'open' ? 'Updating...' : 'Mark as Open'}
+              </button>
+              
+              <button
+                onClick={() => handleStatusUpdate('in-progress')}
+                disabled={isUpdatingStatus || issue.status === 'in-progress'}
+                className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                  issue.status === 'in-progress' 
+                    ? 'bg-yellow-600 text-white cursor-default' 
+                    : 'bg-yellow-600/20 text-yellow-300 border border-yellow-600/30 hover:bg-yellow-600/30'
+                }`}
+              >
+                {isUpdatingStatus && issue.status === 'in-progress' ? 'Updating...' : 'Mark as In Progress'}
+              </button>
+              
+              <button
+                onClick={() => handleStatusUpdate('resolved')}
+                disabled={isUpdatingStatus || issue.status === 'resolved'}
+                className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                  issue.status === 'resolved' 
+                    ? 'bg-green-600 text-white cursor-default' 
+                    : 'bg-green-600/20 text-green-300 border border-green-600/30 hover:bg-green-600/30'
+                }`}
+              >
+                {isUpdatingStatus && issue.status === 'resolved' ? 'Updating...' : 'Mark as Resolved'}
+              </button>
+            </div>
+          )}
           
           <div className="flex gap-6 mt-2">
             <button

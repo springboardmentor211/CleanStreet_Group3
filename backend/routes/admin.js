@@ -2,6 +2,7 @@ const express = require('express');
 const { auth, adminAuth } = require('../middleware/auth');
 const Issue = require('../models/Issue');
 const User = require('../models/User');
+const { blockUser, getUserDetails, getBlockedUsers } = require('../controllers/adminController');
 const router = express.Router();
 
 // Get all issues (admin view)
@@ -17,8 +18,8 @@ router.get('/issues', auth, adminAuth, async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    // Build filter object
-    const filter = {};
+    // Build filter object - exclude soft deleted issues
+    const filter = { isDeleted: { $ne: true } };
     if (status) filter.status = status;
     if (category) filter.category = category;
     if (priority) filter.priority = priority;
@@ -97,7 +98,10 @@ router.put('/issues/:id/assign', auth, adminAuth, async (req, res) => {
 // Get all users
 router.get('/users', auth, adminAuth, async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await User.find()
+      .select('-password')
+      .populate('blockedBy', 'username fullName')
+      .sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
     console.error(error.message);
@@ -105,19 +109,30 @@ router.get('/users', auth, adminAuth, async (req, res) => {
   }
 });
 
+// Block/Unblock user
+router.put('/users/:userId/block', auth, adminAuth, blockUser);
+
+// Get user details with block info
+router.get('/users/:userId/details', auth, adminAuth, getUserDetails);
+
+// Get blocked users
+router.get('/users/blocked', auth, adminAuth, getBlockedUsers);
+
 // Get admin statistics
 router.get('/stats', auth, adminAuth, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
-    const totalIssues = await Issue.countDocuments();
+    const totalIssues = await Issue.countDocuments({ isDeleted: { $ne: true } });
     
-    // Issues by category
+    // Issues by category (exclude soft deleted)
     const issuesByCategory = await Issue.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
     
-    // Issues by status
+    // Issues by status (exclude soft deleted)
     const issuesByStatus = await Issue.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
     
@@ -149,7 +164,8 @@ router.get('/trends', auth, adminAuth, async (req, res) => {
     const monthlyTrends = await Issue.aggregate([
       {
         $match: {
-          createdAt: { $gte: sixMonthsAgo }
+          createdAt: { $gte: sixMonthsAgo },
+          isDeleted: { $ne: true }
         }
       },
       {

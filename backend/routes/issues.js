@@ -18,8 +18,8 @@ router.get('/', async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    // Build filter object
-    const filter = {};
+    // Build filter object - exclude soft deleted issues
+    const filter = { isDeleted: { $ne: true } };
     if (status) filter.status = status;
     if (category) filter.category = category;
 
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
 // Get a specific issue
 router.get('/:id', async (req, res) => {
   try {
-    const issue = await Issue.findById(req.params.id)
+    const issue = await Issue.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
       .populate('reportedBy', 'username fullName')
       .populate('assignedTo', 'username fullName')
       .populate('comments.user', 'username fullName');
@@ -160,7 +160,7 @@ router.put('/:id', auth, async (req, res) => {
 // Delete an issue
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const issue = await Issue.findById(req.params.id);
+    const issue = await Issue.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
     if (!issue) {
       return res.status(404).json({ message: 'Issue not found' });
     }
@@ -184,7 +184,7 @@ router.delete('/:id', auth, async (req, res) => {
 // Vote for an issue
 router.post('/:id/vote', auth, async (req, res) => {
   try {
-    const issue = await Issue.findById(req.params.id);
+    const issue = await Issue.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
     if (!issue) {
       return res.status(404).json({ message: 'Issue not found' });
     }
@@ -233,7 +233,7 @@ router.post('/:id/comment', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const issue = await Issue.findById(req.params.id);
+    const issue = await Issue.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
     if (!issue) {
       return res.status(404).json({ message: 'Issue not found' });
     }
@@ -260,7 +260,7 @@ router.get('/user/:userId', async (req, res) => {
   try {
     const { page = 1, limit = 10, status } = req.query;
     
-    const filter = { reportedBy: req.params.userId };
+    const filter = { reportedBy: req.params.userId, isDeleted: { $ne: true } };
     if (status) filter.status = status;
 
     const issues = await Issue.find(filter)
@@ -286,13 +286,14 @@ router.get('/user/:userId', async (req, res) => {
 // Get dashboard statistics
 router.get('/stats/dashboard', async (req, res) => {
   try {
-    const totalIssues = await Issue.countDocuments();
-    const openIssues = await Issue.countDocuments({ status: 'open' });
-    const inProgressIssues = await Issue.countDocuments({ status: 'in-progress' });
-    const resolvedIssues = await Issue.countDocuments({ status: 'resolved' });
+    const totalIssues = await Issue.countDocuments({ isDeleted: { $ne: true } });
+    const openIssues = await Issue.countDocuments({ status: 'open', isDeleted: { $ne: true } });
+    const inProgressIssues = await Issue.countDocuments({ status: 'in-progress', isDeleted: { $ne: true } });
+    const resolvedIssues = await Issue.countDocuments({ status: 'resolved', isDeleted: { $ne: true } });
 
     // Get recent activity (last 10 resolved or updated issues)
     const recentActivity = await Issue.find({
+      isDeleted: { $ne: true },
       $or: [
         { status: 'resolved' },
         { updatedAt: { $gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } }

@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { UserCircle, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,6 +10,7 @@ export function Layout({ children }: LayoutProps) {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   // Logout handler
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -88,50 +90,52 @@ export function Layout({ children }: LayoutProps) {
             </div>
           ) : (
             <>
-              {/* Links */}
-              <div className="hidden md:flex items-center space-x-8">
-                <Link
-                  to="/dashboard"
-                  className={`text-base ${
-                    isActive("/dashboard")
-                      ? "text-cs-blue-secondary"
-                      : "text-white"
-                  } hover:text-cs-blue-secondary transition-colors`}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/report"
-                  className={`text-base ${
-                    isActive("/report")
-                      ? "text-cs-blue-secondary"
-                      : "text-white"
-                  } hover:text-cs-blue-secondary transition-colors`}
-                >
-                  Report Issues
-                </Link>
-                <Link
-                  to="/complaints"
-                  className={`text-base ${
-                    (isActive("/complaints") || isActive("/issues"))
-                      ? "text-cs-blue-secondary"
-                      : "text-white"
-                  } hover:text-cs-blue-secondary transition-colors`}
-                >
-                  View Complaints
-                </Link>
+              {/* Links - Only show for citizen users */}
+              {user?.role !== 'admin' && (
+                <div className="hidden md:flex items-center space-x-8">
+                  <Link
+                    to="/dashboard"
+                    className={`text-base ${
+                      isActive("/dashboard")
+                        ? "text-cs-blue-secondary"
+                        : "text-white"
+                    } hover:text-cs-blue-secondary transition-colors`}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/report"
+                    className={`text-base ${
+                      isActive("/report")
+                        ? "text-cs-blue-secondary"
+                        : "text-white"
+                    } hover:text-cs-blue-secondary transition-colors`}
+                  >
+                    Report Issues
+                  </Link>
+                  <Link
+                    to="/complaints"
+                    className={`text-base ${
+                      (isActive("/complaints") || isActive("/issues"))
+                        ? "text-cs-blue-secondary"
+                        : "text-white"
+                    } hover:text-cs-blue-secondary transition-colors`}
+                  >
+                    View Complaints
+                  </Link>
 
-                <Link
-                  to="/maps"
-                  className={`text-base ${
-                    isActive("/maps")
-                      ? "text-cs-blue-secondary"
-                      : "text-white"
-                  } hover:text-cs-blue-secondary transition-colors`}
-                >
-                  Issue Map
-                </Link>
-              </div>
+                  <Link
+                    to="/maps"
+                    className={`text-base ${
+                      isActive("/maps")
+                        ? "text-cs-blue-secondary"
+                        : "text-white"
+                    } hover:text-cs-blue-secondary transition-colors`}
+                  >
+                    Issue Map
+                  </Link>
+                </div>
+              )}
 
               {/* Profile + Logout */}
               <div className="flex items-center space-x-2 sm:space-x-4">

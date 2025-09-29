@@ -306,6 +306,21 @@ export const adminAPI = {
   getTrends: async () => {
     return apiRequest('/admin/trends');
   },
+
+  blockUser: async (userId: string, block: boolean, reason?: string) => {
+    return apiRequest(`/admin/users/${userId}/block`, {
+      method: 'PUT',
+      body: JSON.stringify({ block, reason }),
+    });
+  },
+
+  getUserDetails: async (userId: string) => {
+    return apiRequest(`/admin/users/${userId}/details`);
+  },
+
+  getBlockedUsers: async () => {
+    return apiRequest('/admin/users/blocked');
+  },
 };
 
 // Health check
