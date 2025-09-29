@@ -23,6 +23,13 @@ const removeAuthToken = () => localStorage.removeItem('authToken');
 const apiRequest = async <T = any>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
   const token = getAuthToken();
   
+  console.log(`=== API Request Debug [${endpoint}] ===`);
+  console.log("API_BASE_URL:", API_BASE_URL);
+  console.log("Endpoint:", endpoint);
+  console.log("Full URL:", `${API_BASE_URL}${endpoint}`);
+  console.log("Auth token:", token ? `${token.substring(0, 20)}...` : 'No token');
+  console.log("Request options:", options);
+  
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -43,17 +50,32 @@ const apiRequest = async <T = any>(endpoint: string, options: RequestInit = {}):
       }
     };
 
+    console.log("Final fetch config:", fetchConfig);
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchConfig);
     console.log(`API Request [${endpoint}] Response:`, response);
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+    console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
     
     let data: ApiResponse<T> = {};
     try {
-      data = await response.json() as ApiResponse<T>;
+      const responseText = await response.text();
+      console.log(`Raw response text [${endpoint}]:`, responseText);
+      
+      if (responseText) {
+        data = JSON.parse(responseText) as ApiResponse<T>;
+        console.log(`Parsed response data [${endpoint}]:`, data);
+      }
     } catch (e) {
       console.warn('Failed to parse JSON response', e);
     }
     
     if (!response.ok) {
+      console.error(`API Error [${endpoint}]:`, {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      });
       const errorMessage = data?.message || `HTTP ${response.status} ${response.statusText}`;
       const error = new Error(errorMessage) as ErrorResponse;
       error.status = response.status;
@@ -61,11 +83,22 @@ const apiRequest = async <T = any>(endpoint: string, options: RequestInit = {}):
       throw error;
     }
 
+    console.log(`API Success [${endpoint}]:`, data);
     return data as ApiResponse<T>;
   } catch (error) {
     console.error(`API Request Error [${endpoint}]:`, error);
     throw error;
   }
+};
+
+// Debug API (remove in production)
+export const debugAPI = {
+  getUsers: async () => {
+    return apiRequest('/auth/debug/users');
+  },
+  getUserById: async (id: string) => {
+    return apiRequest(`/auth/debug/user/${id}`);
+  },
 };
 
 // Auth API
@@ -117,9 +150,22 @@ export const authAPI = {
   },
 
   getCurrentUser: async (): Promise<any> => {
-    const response = await apiRequest<any>('/auth/me');
-    // Backend returns user directly, not wrapped in data object
-    return response;
+    console.log("=== API getCurrentUser Call ===");
+    console.log("Making request to /auth/me");
+    console.log("Current auth token:", getAuthToken());
+    
+    try {
+      const response = await apiRequest<any>('/auth/me');
+      console.log("getCurrentUser API response:", response);
+      console.log("Response type:", typeof response);
+      console.log("Response keys:", Object.keys(response || {}));
+      
+      // Backend returns user directly, not wrapped in data object
+      return response;
+    } catch (error) {
+      console.error("getCurrentUser API error:", error);
+      throw error;
+    }
   },
 
   updateProfile: async (profileData: {
@@ -245,12 +291,14 @@ export const issuesAPI = {
     limit?: number;
     status?: string;
   }) => {
-    const query = new URLSearchParams({ userId });
+    const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.status) query.append('status', params.status);
 
-    return apiRequest(`/issues/user?${query.toString()}`);
+    const queryString = query.toString();
+    const url = `/issues/user/${userId}${queryString ? `?${queryString}` : ''}`;
+    return apiRequest(url);
   },
 
   getDashboardStats: async () => {

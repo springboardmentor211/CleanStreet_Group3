@@ -69,9 +69,21 @@ const auth = async (req, res, next) => {
     console.log('Token decoded:', decoded);
     
     // Check if user still exists
+    console.log('Looking for user with ID:', decoded.user.id);
+    console.log('User ID type:', typeof decoded.user.id);
+    console.log('User ID length:', decoded.user.id ? decoded.user.id.length : 'No ID');
+    
+    const mongoose = require('mongoose');
+    console.log('Is valid ObjectId in middleware:', mongoose.Types.ObjectId.isValid(decoded.user.id));
+    
     const user = await User.findById(decoded.user.id).select('-password');
+    console.log('User found in auth middleware:', !!user);
+    
     if (!user) {
-      console.log('User not found for token');
+      console.log('User not found for token in middleware');
+      // Let's check total users for debugging
+      const totalUsers = await User.countDocuments();
+      console.log('Total users in collection (middleware):', totalUsers);
       return res.status(401).json({ message: 'Token is not valid' });
     }
     

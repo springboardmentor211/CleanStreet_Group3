@@ -283,10 +283,54 @@ router.post('/reset-password', [
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    console.log('=== /auth/me endpoint called ===');
+    console.log('req.user from auth middleware:', req.user);
+    console.log('req.user.id:', req.user.id);
+    console.log('req.user.id type:', typeof req.user.id);
+    console.log('req.user.id length:', req.user.id ? req.user.id.length : 'No ID');
+    
+    // Check if it's a valid ObjectId format
+    const mongoose = require('mongoose');
+    console.log('Is valid ObjectId:', mongoose.Types.ObjectId.isValid(req.user.id));
+    
+    // Try to find user with detailed logging
+    console.log('Attempting to find user by ID...');
+    let user = await User.findById(req.user.id).select('-password');
+    console.log('User found by req.user.id:', user);
+    
+    // If not found by req.user.id, try by req.user._id
+    if (!user && req.user._id) {
+      console.log('Trying with req.user._id:', req.user._id);
+      user = await User.findById(req.user._id).select('-password');
+      console.log('User found by req.user._id:', user);
+    }
+    
+    console.log('User object keys:', user ? Object.keys(user.toObject()) : 'No user found');
+    
+    // Let's also try to find ANY users in the collection for debugging
+    const totalUsers = await User.countDocuments();
+    console.log('Total users in collection:', totalUsers);
+    
+    if (totalUsers > 0) {
+      const sampleUsers = await User.find({}).limit(3).select('_id username email');
+      console.log('Sample users in database:', sampleUsers);
+    }
+    
+    if (!user) {
+      console.log('No user found with ID:', req.user.id);
+      // Let's try to find by other fields to see if the user exists with different ID
+      if (req.user.email) {
+        const userByEmail = await User.findOne({ email: req.user.email });
+        console.log('User found by email:', userByEmail ? userByEmail._id : 'Not found');
+      }
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    console.log('Sending user data:', user.toObject());
     res.json(user);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error in /auth/me:', err.message);
+    console.error('Stack trace:', err.stack);
     res.status(500).send('Server Error');
   }
 });
@@ -325,14 +369,47 @@ router.put('/update-profile', [
   }
 });
 
-// Get current user
-router.get('/me', auth, async (req, res) => {
+// Debug endpoint to check users (remove in production)
+router.get('/debug/users', async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
-    res.json(user);
+    const users = await User.find({}).select('_id username email fullName role createdAt').limit(10);
+    res.json({
+      total: await User.countDocuments(),
+      users: users
+    });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug endpoint to check specific user ID
+router.get('/debug/user/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('Debug: Looking for user ID:', id);
+    
+    const mongoose = require('mongoose');
+    console.log('Debug: Is valid ObjectId:', mongoose.Types.ObjectId.isValid(id));
+    
+    const user = await User.findById(id);
+    console.log('Debug: User found:', !!user);
+    
+    if (user) {
+      res.json({
+        found: true,
+        user: user
+      });
+    } else {
+      res.json({
+        found: false,
+        id: id,
+        totalUsers: await User.countDocuments()
+      });
+    }
+  } catch (error) {
+    console.error('Debug endpoint error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
