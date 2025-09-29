@@ -36,17 +36,17 @@ export default function Profile() {
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("=== Profile Page Debug Info ===");
-      console.log("AuthLoading:", authLoading);
-      console.log("User from auth context:", user);
+      // console.log("=== Profile Page Debug Info ===");
+      // console.log("AuthLoading:", authLoading);
+      // console.log("User from auth context:", user);
       
       // Get user ID from localStorage as fallback
       const storedUser = localStorage.getItem('currentUser');
       const authToken = localStorage.getItem('authToken');
       
-      console.log("Stored user (raw):", storedUser);
-      console.log("Auth token exists:", !!authToken);
-      console.log("Auth token (first 50 chars):", authToken ? authToken.substring(0, 50) + '...' : 'No token');
+      // console.log("Stored user (raw):", storedUser);
+      // console.log("Auth token exists:", !!authToken);
+      // console.log("Auth token (first 50 chars):", authToken ? authToken.substring(0, 50) + '...' : 'No token');
       
       // Let's also decode the JWT token to see what's inside
       if (authToken) {
@@ -54,10 +54,10 @@ export default function Profile() {
           const tokenParts = authToken.split('.');
           if (tokenParts.length === 3) {
             const payload = JSON.parse(atob(tokenParts[1]));
-            console.log("Decoded JWT payload:", payload);
-            console.log("User ID from JWT:", payload.user?.id);
-            console.log("JWT expiry:", new Date(payload.exp * 1000));
-            console.log("Is token expired:", Date.now() >= payload.exp * 1000);
+            // console.log("Decoded JWT payload:", payload);
+            // console.log("User ID from JWT:", payload.user?.id);
+            // console.log("JWT expiry:", new Date(payload.exp * 1000));
+            // console.log("Is token expired:", Date.now() >= payload.exp * 1000);
           }
         } catch (error) {
           console.error("Error decoding JWT:", error);
@@ -70,8 +70,8 @@ export default function Profile() {
         try {
           const parsedUser = JSON.parse(storedUser);
           userId = parsedUser.id || parsedUser._id;
-          console.log("Parsed stored user:", parsedUser);
-          console.log("Extracted user ID:", userId);
+          // console.log("Parsed stored user:", parsedUser);
+          // console.log("Extracted user ID:", userId);
         } catch (error) {
           console.error("Error parsing stored user:", error);
         }
@@ -79,17 +79,17 @@ export default function Profile() {
 
       // Use auth context user or stored user ID
       const currentUserId = user?.id || userId;
-      console.log("Final current user ID:", currentUserId);
+      // console.log("Final current user ID:", currentUserId);
       
       // Debug: Check what users exist in the database
       try {
         const debugUsers = await debugAPI.getUsers();
-        console.log("=== Debug: Users in database ===", debugUsers);
+        // console.log("=== Debug: Users in database ===", debugUsers);
         
         // Check if the specific user ID exists
         if (currentUserId) {
           const specificUser = await debugAPI.getUserById(currentUserId);
-          console.log("=== Debug: Specific user lookup ===", specificUser);
+          // console.log("=== Debug: Specific user lookup ===", specificUser);
         }
       } catch (error) {
         console.error("Debug API failed:", error);
@@ -98,26 +98,26 @@ export default function Profile() {
       if (!authLoading && currentUserId) {
         try {
           setLoading(true);
-          console.log("Making API call to getCurrentUser...");
+          // console.log("Making API call to getCurrentUser...");
           
           const userData = await authAPI.getCurrentUser();
           
-          console.log("=== API Response from getCurrentUser ===");
-          console.log("Raw userData:", userData);
-          console.log("userData type:", typeof userData);
-          console.log("userData keys:", Object.keys(userData || {}));
-          console.log("userData._id:", userData?._id);
-          console.log("userData.id:", userData?.id);
-          console.log("userData.fullName:", userData?.fullName);
-          console.log("userData.username:", userData?.username);
-          console.log("userData.email:", userData?.email);
-          console.log("userData.phoneNumber:", userData?.phoneNumber);
-          console.log("userData.location:", userData?.location);
-          console.log("userData.bio:", userData?.bio);
-          console.log("userData.role:", userData?.role);
-          console.log("userData.joinDate:", userData?.joinDate);
-          console.log("userData.createdAt:", userData?.createdAt);
-          console.log("=== End API Response ===");
+          // console.log("=== API Response from getCurrentUser ===");
+          // console.log("Raw userData:", userData);
+          // console.log("userData type:", typeof userData);
+          // console.log("userData keys:", Object.keys(userData || {}));
+          // console.log("userData._id:", userData?._id);
+          // console.log("userData.id:", userData?.id);
+          // console.log("userData.fullName:", userData?.fullName);
+          // console.log("userData.username:", userData?.username);
+          // console.log("userData.email:", userData?.email);
+          // console.log("userData.phoneNumber:", userData?.phoneNumber);
+          // console.log("userData.location:", userData?.location);
+          // console.log("userData.bio:", userData?.bio);
+          // console.log("userData.role:", userData?.role);
+          // console.log("userData.joinDate:", userData?.joinDate);
+          // console.log("userData.createdAt:", userData?.createdAt);
+          // console.log("=== End API Response ===");
           
           const processedUserInfo = {
             fullName: userData.fullName || "",
@@ -132,15 +132,15 @@ export default function Profile() {
             profileImage: userData.profileImage || ""
           };
           
-          console.log("=== Processed User Info ===");
-          console.log("processedUserInfo:", processedUserInfo);
+          // console.log("=== Processed User Info ===");
+          // console.log("processedUserInfo:", processedUserInfo);
           
           setUserInfo(processedUserInfo);
 
           // Fetch user statistics
           try {
             const userIssuesResponse = await issuesAPI.getUserIssues(userData._id);
-            console.log("User issues response:", userIssuesResponse);
+            // console.log("User issues response:", userIssuesResponse);
             
             if (userIssuesResponse && userIssuesResponse.issues) {
               const issues = userIssuesResponse.issues;
@@ -171,12 +171,12 @@ export default function Profile() {
             if (error.message.includes('User not found') || 
                 error.message.includes('Token is not valid') ||
                 error.message.includes('authorization denied')) {
-              console.log("🚨 ROOT CAUSE IDENTIFIED: User doesn't exist in database!");
-              console.log("This happens when:");
-              console.log("1. User was deleted from database but token is still valid");
-              console.log("2. Token references non-existent user ID");  
-              console.log("3. Database connection issues");
-              console.log("💡 SOLUTION: Clear session and register/login again");
+              // console.log("🚨 ROOT CAUSE IDENTIFIED: User doesn't exist in database!");
+              // console.log("This happens when:");
+              // console.log("1. User was deleted from database but token is still valid");
+              // console.log("2. Token references non-existent user ID");  
+              // console.log("3. Database connection issues");
+              // console.log("💡 SOLUTION: Clear session and register/login again");
               
               // Clear invalid auth data
               localStorage.removeItem('authToken');
@@ -203,16 +203,16 @@ export default function Profile() {
           setLoading(false);
         }
       } else if (!authLoading && !currentUserId) {
-        console.log("=== No User ID Available ===");
-        console.log("AuthLoading:", authLoading);
-        console.log("User from context:", user);
-        console.log("User ID from localStorage:", userId);
-        console.log("Final currentUserId:", currentUserId);
+        // console.log("=== No User ID Available ===");
+        // console.log("AuthLoading:", authLoading);
+        // console.log("User from context:", user);
+        // console.log("User ID from localStorage:", userId);
+        // console.log("Final currentUserId:", currentUserId);
         setLoading(false);
       } else {
-        console.log("=== Still Loading Auth or No User ===");
-        console.log("AuthLoading:", authLoading);
-        console.log("CurrentUserId:", currentUserId);
+        // console.log("=== Still Loading Auth or No User ===");
+        // console.log("AuthLoading:", authLoading);
+        // console.log("CurrentUserId:", currentUserId);
       }
     };
 
@@ -238,7 +238,7 @@ export default function Profile() {
       };
       
       const updatedUser = await authAPI.updateProfile(updateData);
-      console.log("Profile updated:", updatedUser);
+      // console.log("Profile updated:", updatedUser);
       
       // Update local state with the response
       setUserInfo(prev => ({

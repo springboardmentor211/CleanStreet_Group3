@@ -76,14 +76,14 @@ const ReportIssue = () => {
     lng: number;
     address: string;
   }) => {
-  console.log("Location selected:", location);
+  // console.log("Location selected:", location);
   setSelectedLocation(location);
   form.setValue("address", location.address);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    console.log("Files selected:", files);
+    // console.log("Files selected:", files);
     const validFiles = files.filter(file => {
       const isValidType = file.type.startsWith("image/");
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
@@ -94,7 +94,7 @@ const ReportIssue = () => {
     setUploadedFiles(prev => [...prev, ...validFiles]);
     if (validFiles.length)
       toast.success(`${validFiles.length} file(s) uploaded successfully!`);
-    console.log("Valid files:", validFiles);
+    // console.log("Valid files:", validFiles);
   };
 
   const removeFile = (index: number) => {
@@ -103,7 +103,7 @@ const ReportIssue = () => {
 
   const onSubmit = async (data: FormData) => {
     try {
-      console.log("Form data before submit:", data);
+      // console.log("Form data before submit:", data);
       const formData = new FormData();
       formData.append("title", data.issueTitle);
       formData.append("category", data.category);
@@ -113,26 +113,26 @@ const ReportIssue = () => {
       // location GeoJSON object (no address inside)
       if (selectedLocation) {
         const locationGeo = { type: "Point", coordinates: [selectedLocation.lng, selectedLocation.lat] };
-        console.log("Location GeoJSON to send:", locationGeo);
+        // console.log("Location GeoJSON to send:", locationGeo);
         formData.append("location", JSON.stringify(locationGeo));
       }
       uploadedFiles.forEach(file => {
         formData.append("images", file);
       });
-      console.log("FormData to send:");
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
+      // console.log("FormData to send:");
+      // for (let pair of formData.entries()) {
+      //   // console.log(pair[0], pair[1]);
+      // }
 
       const token = window.localStorage.getItem("authToken");
-      console.log("Submitting with token:", token);
+      // console.log("Submitting with token:", token);
       const res = await fetch("http://localhost:5000/api/issues", {
         method: "POST",
         body: formData,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      console.log("Response status:", res.status);
+      // console.log("Response status:", res.status);
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         console.error("Error response from backend:", errorData);

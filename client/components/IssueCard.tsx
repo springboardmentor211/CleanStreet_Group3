@@ -25,22 +25,22 @@ interface IssueCardProps {
 
 const statusConfig = {
   "Received": {
-    bg: "bg-orange-400",
+    style: { backgroundColor: "#3b82f6" }, // Blue
     text: "text-white",
     label: "Received"
   },
   "In Progress": {
-    bg: "bg-yellow-600",
+    style: { backgroundColor: "#f59e0b" }, // Amber
     text: "text-white", 
     label: "In Progress"
   },
   "Resolved": {
-    bg: "bg-green-600",
+    style: { backgroundColor: "#059669" }, // Green
     text: "text-white",
     label: "Resolved"
   },
   "Closed": {
-    bg: "bg-gray-600",
+    style: { backgroundColor: "#6b7280" }, // Gray
     text: "text-white",
     label: "Closed"
   }
@@ -50,7 +50,7 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
   // Ensure status is properly cased to match our config
   const normalizedStatus = issue.status as keyof typeof statusConfig;
   const statusStyle = statusConfig[normalizedStatus] || {
-    bg: "bg-gray-500",
+    style: { backgroundColor: "#6b7280" }, // Gray fallback
     text: "text-white",
     label: issue.status || "Unknown"
   };
@@ -83,7 +83,10 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
             {issue.title}
           </h3>
         </div>
-        <div className={`px-3 sm:px-4 py-2 rounded-full ${statusStyle.bg} self-start sm:self-auto`}>
+        <div 
+          className={`px-3 sm:px-4 py-2 rounded-full self-start sm:self-auto`}
+          style={statusStyle.style}
+        >
           <span className={`text-base sm:text-lg font-semibold ${statusStyle.text}`}>
             {statusStyle.label}
           </span>
@@ -91,7 +94,7 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
       </div>
 
       {/* Description */}
-      <p className="text-white text-base sm:text-lg leading-tight mb-6 text-center px-2 sm:px-4">
+      <p className="text-white text-base sm:text-lg leading-tight mb-6 text-center px-2 sm:px-4 truncate overflow-hidden whitespace-nowrap">
         {issue.description}
       </p>
 

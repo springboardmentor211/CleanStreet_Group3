@@ -49,9 +49,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const storedToken = getAuthToken();
       const storedUser = localStorage.getItem('currentUser');
       
-      console.log('Initializing auth...');
-      console.log('Stored token:', storedToken);
-      console.log('Stored user:', storedUser);
+      // console.log('Initializing auth...');
+      // console.log('Stored token:', storedToken);
+      // console.log('Stored user:', storedUser);
       
       if (storedToken && storedUser) {
         try {
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           
           // Then verify with server in background
           const userData = await authAPI.getCurrentUser();
-          console.log('Server user data:', userData);
+          // console.log('Server user data:', userData);
           
           if (userData && userData.id) {
             setUser(userData);
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
       } else {
         // No stored authentication data
-        console.log('No stored auth data found');
+        // console.log('No stored auth data found');
         setUser(null);
         setUserInfo(null);
         setToken(null);
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setLoginError(null);
     setLoginSuccess(false);
     const response = await authAPI.login(email, password);
-    console.log('Login response:', response);
+    // console.log('Login response:', response);
     if (response.token && response.user) {
       window.localStorage.setItem('authToken', response.token);
       window.localStorage.setItem('currentUser', JSON.stringify(response.user));
@@ -107,14 +107,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoginSuccess(true);
       setLoginError(null);
       setTimeout(() => {
-        console.log('AuthContext fields after login:');
-        console.log('user:', response.user);
-        console.log('userInfo:', response.user);
-        console.log('token:', response.token);
-        console.log('isAuthenticated:', true);
-        console.log('loading:', false);
-        console.log('loginError:', null);
-        console.log('loginSuccess:', true);
+        // console.log('AuthContext fields after login:');
+        // console.log('user:', response.user);
+        // console.log('userInfo:', response.user);
+        // console.log('token:', response.token);
+        // console.log('isAuthenticated:', true);
+        // console.log('loading:', false);
+        // console.log('loginError:', null);
+        // console.log('loginSuccess:', true);
       }, 0);
     } else {
       setUser(null);
@@ -122,15 +122,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setToken(null);
       setLoginError('No token or user Received, login failed.');
       setLoginSuccess(false);
-      console.log('No token or user Received, login failed.');
-      console.log('AuthContext fields after login:');
-      console.log('user:', null);
-      console.log('userInfo:', null);
-      console.log('token:', null);
-      console.log('isAuthenticated:', false);
-      console.log('loading:', false);
-      console.log('loginError:', 'No token or user Received, login failed.');
-      console.log('loginSuccess:', false);
+      // console.log('No token or user Received, login failed.');
+      // console.log('AuthContext fields after login:');
+      // console.log('user:', null);
+      // console.log('userInfo:', null);
+      // console.log('token:', null);
+      // console.log('isAuthenticated:', false);
+      // console.log('loading:', false);
+      // console.log('loginError:', 'No token or user Received, login failed.');
+      // console.log('loginSuccess:', false);
     }
     setLoading(false);
   };

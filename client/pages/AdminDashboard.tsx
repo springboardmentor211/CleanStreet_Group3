@@ -231,7 +231,7 @@ const AdminDashboard = () => {
   const downloadChartAsPNG = async (elementId: string, filename: string) => {
     try {
       setDownloadingChart(elementId);
-      console.log('Starting image download for:', elementId);
+      // console.log('Starting image download for:', elementId);
       
       const element = document.getElementById(elementId);
       if (!element) {
@@ -240,7 +240,7 @@ const AdminDashboard = () => {
         return;
       }
 
-      console.log('Element found, starting html2canvas...');
+      // console.log('Element found, starting html2canvas...');
 
       // Use the imported html2canvas with simpler options first
       const canvas = await html2canvas(element, {
@@ -251,12 +251,12 @@ const AdminDashboard = () => {
         logging: true
       });
       
-      console.log('Canvas created successfully:', canvas.width, 'x', canvas.height);
+      // console.log('Canvas created successfully:', canvas.width, 'x', canvas.height);
       
       canvas.toBlob((blob: Blob | null) => {
-        console.log('Blob created:', blob);
+        // console.log('Blob created:', blob);
         if (blob) {
-          console.log('Creating download link...');
+          // console.log('Creating download link...');
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
@@ -266,7 +266,7 @@ const AdminDashboard = () => {
           link.click();
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
-          console.log('Download triggered successfully');
+          // console.log('Download triggered successfully');
         } else {
           console.error('Failed to create blob');
           alert('Failed to create image blob');
@@ -471,7 +471,7 @@ const AdminDashboard = () => {
   // Simple test for html2canvas
   const testHtml2Canvas = async () => {
     try {
-      console.log('Testing html2canvas...');
+      // console.log('Testing html2canvas...');
       const testDiv = document.createElement('div');
       testDiv.innerHTML = 'Test';
       testDiv.style.padding = '20px';
@@ -490,7 +490,7 @@ const AdminDashboard = () => {
           link.download = 'test.png';
           link.click();
           URL.revokeObjectURL(url);
-          console.log('html2canvas test successful!');
+          // console.log('html2canvas test successful!');
         }
       });
     } catch (error) {
@@ -502,7 +502,7 @@ const AdminDashboard = () => {
   const downloadChartAsImage = (elementId: string, filename: string) => {
     try {
       setDownloadingChart(elementId);
-      console.log('Trying alternative download method for:', elementId);
+      // console.log('Trying alternative download method for:', elementId);
       
       const element = document.getElementById(elementId);
       if (!element) {
@@ -540,7 +540,7 @@ const AdminDashboard = () => {
                 link.download = `${filename}.png`;
                 link.click();
                 URL.revokeObjectURL(url);
-                console.log('SVG download completed');
+                // console.log('SVG download completed');
               }
               setDownloadingChart(null);
             });
@@ -1072,7 +1072,7 @@ const AdminDashboard = () => {
                       </Button>
                       <Button
                         onClick={() => {
-                          console.log('Image download button clicked');
+                          // console.log('Image download button clicked');
                           downloadChartAsImage('category-chart', 'category-chart');
                         }}
                         variant="outline"

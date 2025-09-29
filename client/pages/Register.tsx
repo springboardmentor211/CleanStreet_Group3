@@ -25,7 +25,7 @@ export default function Register() {
         password,
         phoneNumber
       });
-      console.log("Registration successful:", response);
+      // console.log("Registration successful:", response);
       navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "Registration failed");

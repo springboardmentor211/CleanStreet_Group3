@@ -46,8 +46,8 @@ const User = require('../models/User');
 
 const auth = async (req, res, next) => {
   try {
-    console.log('Auth middleware called');
-    console.log('Headers:', req.headers);
+    // console.log('Auth middleware called');
+    // console.log('Headers:', req.headers);
     
     const authHeader = req.header('authorization');
     let token;
@@ -55,35 +55,35 @@ const auth = async (req, res, next) => {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1]; // Get only the token part
     }
-    console.log('Token Received:', token);
+    // console.log('Token Received:', token);
     
 
     // Check if no token
     if (!token) {
-      console.log('No token provided');
+      // console.log('No token provided');
       return res.status(401).json({ message: 'No token, authorization denied' });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Token decoded:', decoded);
+    // console.log('Token decoded:', decoded);
     
     // Check if user still exists
-    console.log('Looking for user with ID:', decoded.user.id);
-    console.log('User ID type:', typeof decoded.user.id);
-    console.log('User ID length:', decoded.user.id ? decoded.user.id.length : 'No ID');
+    // console.log('Looking for user with ID:', decoded.user.id);
+    // console.log('User ID type:', typeof decoded.user.id);
+    // console.log('User ID length:', decoded.user.id ? decoded.user.id.length : 'No ID');
     
     const mongoose = require('mongoose');
-    console.log('Is valid ObjectId in middleware:', mongoose.Types.ObjectId.isValid(decoded.user.id));
+    // console.log('Is valid ObjectId in middleware:', mongoose.Types.ObjectId.isValid(decoded.user.id));
     
     const user = await User.findById(decoded.user.id).select('-password');
-    console.log('User found in auth middleware:', !!user);
+    // console.log('User found in auth middleware:', !!user);
     
     if (!user) {
-      console.log('User not found for token in middleware');
+      // console.log('User not found for token in middleware');
       // Let's check total users for debugging
       const totalUsers = await User.countDocuments();
-      console.log('Total users in collection (middleware):', totalUsers);
+      // console.log('Total users in collection (middleware):', totalUsers);
       return res.status(401).json({ message: 'Token is not valid' });
     }
     
@@ -93,7 +93,7 @@ const auth = async (req, res, next) => {
       id: user._id.toString(), // Ensure we have 'id' field pointing to MongoDB's '_id'
       role: decoded.user.role || user.role || 'citizen'
     };
-    console.log('User authenticated:', user.username, 'Role:', req.user.role);
+    // console.log('User authenticated:', user.username, 'Role:', req.user.role);
     next();
   } catch (err) {
     console.error('Auth error:', err.message);

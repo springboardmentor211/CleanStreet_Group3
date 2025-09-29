@@ -97,7 +97,7 @@ export default function Dashboard() {
           resolved: res.resolved || 0,
           recentActivity: Array.isArray(res.recentActivity) ? res.recentActivity : [],
         });
-        console.log("Fetched Dashboard Metrics:", res);
+        // console.log("Fetched Dashboard Metrics:", res);
       } catch (err) {
         console.error("Dashboard metrics error:", err);
       }
@@ -147,7 +147,7 @@ export default function Dashboard() {
     ? metrics.recentActivity
     : defaultActivity;
   
-  console.log("Recent Activities: ",recentActivity);
+  // console.log("Recent Activities: ",recentActivity);
 
   const navigate = useNavigate();
 
