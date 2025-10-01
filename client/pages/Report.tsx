@@ -285,10 +285,13 @@ const ReportIssue = () => {
                         <FormLabel>Address</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Enter street address"
+                            placeholder="Enter street address or search location"
                             {...field}
                           />
                         </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Type an address to search and zoom the map, or click on the map to select a location
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -407,7 +410,10 @@ const ReportIssue = () => {
                 <CardTitle>Location on Map</CardTitle>
               </CardHeader>
               <CardContent>
-                <MiniMap onLocationSelect={handleLocationSelect} />
+                <MiniMap 
+                  onLocationSelect={handleLocationSelect} 
+                  searchAddress={form.watch("address")}
+                />
                 {selectedLocation && (
                   <div className="mt-2 text-xs text-muted-foreground">
                     Selected: Lat {selectedLocation.lat}, Lng {selectedLocation.lng}
