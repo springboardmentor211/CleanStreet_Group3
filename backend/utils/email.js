@@ -39,10 +39,9 @@ const createTransporter = async () => {
   });
 };
 
-const sendPasswordResetEmail = async (email, resetToken) => {
+const sendPasswordResetEmail = async (email, resetUrl) => {
   try {
     const transporter = await createTransporter();
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: `"Clean Street" <${process.env.EMAIL_USERNAME}>`,

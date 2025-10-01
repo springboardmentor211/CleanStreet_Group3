@@ -39,7 +39,7 @@ export default function ResetPassword() {
         navigate("/login");
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Error resetting password");
+      setError(err.message || "Error resetting password");
       setMessage("");
     } finally {
       setLoading(false);

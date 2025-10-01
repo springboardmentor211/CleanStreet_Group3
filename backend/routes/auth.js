@@ -236,14 +236,14 @@ router.post('/forgot-password', [
 // @access  Public
 router.post('/reset-password', [
   body('token', 'Reset token is required').not().isEmpty(),
-  body('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
+  body('newPassword', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { token, password } = req.body;
+  const { token, newPassword } = req.body;
 
   try {
     // Find user by token and check if token is not expired
@@ -253,28 +253,28 @@ router.post('/reset-password', [
     });
     
     if (!user) {
-      return res.status(400).json({ errors: [{ msg: 'Invalid or expired token' }] });
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
     // Verify token using user's password hash
     try {
       jwt.verify(token, process.env.JWT_SECRET + user.password);
     } catch (err) {
-      return res.status(400).json({ errors: [{ msg: 'Invalid token' }] });
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
-    // Update password and clear reset token
+    // Update password and clear reset token fields
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
+    user.password = await bcrypt.hash(newPassword, salt);
     user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
+    user.resetPasswordExpires = undefined;
     await user.save();
 
     res.json({ success: true, message: 'Password has been reset successfully' });
   } catch (err) {
     console.error(err.message);
     if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-      return res.status(400).json({ errors: [{ msg: 'Invalid or expired token' }] });
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
     res.status(500).send('Server error');
   }
@@ -416,24 +416,7 @@ router.get('/debug/user/:id', async (req, res) => {
   }
 });
 
-// Update user profile
-router.put('/update-profile', auth, async (req, res) => {
-  try {
-    const { fullName, phoneNumber, location, bio } = req.body;
-    const userId = req.user.id || req.user._id;
-    
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { fullName, phoneNumber, location, bio },
-      { new: true }
-    ).select('-password');
-    
-    res.json(user);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
-  }
-});
+
 
 // Upload profile image
 router.post('/upload-profile-image', [auth, upload.single('profileImage')], async (req, res) => {
@@ -493,89 +476,8 @@ router.post('/upload-profile-image', [auth, upload.single('profileImage')], asyn
   }
 });
 
-// Forgot password
-router.post('/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    const user = await User.findOne({ email });
-    if (!user) {
-      // For security, don't reveal if the email exists or not
-      return res.json({ message: 'If an account exists with this email, password reset instructions will be sent' });
-    }
-    
-    // Generate reset token
-    const resetToken = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET + user.password, // Include user's current password in the secret to invalidate when password changes
-      { expiresIn: '1h' }
-    );
-    
-    // Send email with reset link
-    const emailSent = await sendPasswordResetEmail(email, resetToken);
-    
-    if (!emailSent) {
-      return res.status(500).json({ message: 'Error sending reset email. Please try again later.' });
-    }
-    
-    res.json({ 
-      success: true,
-      message: 'Password reset instructions have been sent to your email address.'
-    });
-    
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
-  }
-});
 
-// Reset password
-router.post('/reset-password', [
-  body('token').notEmpty().withMessage('Reset token is required'),
-  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
 
-    const { token, newPassword } = req.body;
-    
-    // Verify token and get user
-    const decoded = jwt.decode(token);
-    if (!decoded || !decoded.userId) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
-    }
 
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      return res.status(400).json({ message: 'User not found' });
-    }
-
-    // Verify token with user's current password in the secret
-    try {
-      jwt.verify(token, process.env.JWT_SECRET + user.password);
-    } catch (error) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
-    }
-    
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    // Update user password and invalidate all sessions
-    user.password = hashedPassword;
-    await user.save();
-    
-    res.json({ 
-      success: true,
-      message: 'Your password has been reset successfully. You can now log in with your new password.'
-    });
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
-  }
-});
 
 module.exports = router;
