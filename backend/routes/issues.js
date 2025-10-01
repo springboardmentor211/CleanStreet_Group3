@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { uploadIssueImage } = require('../utils/cloudinary');
 const Issue = require('../models/Issue');
 const User = require('../models/User');
 const router = express.Router();
@@ -80,9 +81,14 @@ router.post('/', [
   body('address').notEmpty().withMessage('Address is required')
 ], async (req, res) => {
   try {
-    // console.log(req.body);
+    console.log('=== Create Issue Request ===');
+    console.log('Body:', req.body);
+    console.log('Files count:', req.files ? req.files.length : 0);
+    console.log('User:', req.user ? req.user.username : 'No user');
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -97,10 +103,20 @@ router.post('/', [
       }
     }
 
-    // Extract image file paths from req.files
+    // Upload images to Cloudinary if files are present
     let images = [];
     if (req.files && req.files.length > 0) {
-      images = req.files.map(file => file.path);
+      console.log(`Uploading ${req.files.length} images to Cloudinary...`);
+      
+      try {
+        const uploadPromises = req.files.map(file => uploadIssueImage(file.buffer));
+        const uploadResults = await Promise.all(uploadPromises);
+        images = uploadResults.map(result => result.secure_url);
+        console.log('Images uploaded successfully:', images);
+      } catch (uploadError) {
+        console.error('Error uploading images to Cloudinary:', uploadError);
+        return res.status(500).json({ message: 'Error uploading images. Please try again.' });
+      }
     }
 
     const issue = new Issue({

@@ -125,11 +125,17 @@ const ReportIssue = () => {
       // }
 
       const token = window.localStorage.getItem("authToken");
-      // console.log("Submitting with token:", token);
+      console.log("Submitting with token:", token ? `${token.substring(0, 20)}...` : 'No token');
+      console.log("FormData contents:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], typeof pair[1] === 'object' ? 'File object' : pair[1]);
+      }
+      
       const res = await fetch("http://localhost:5000/api/issues", {
         method: "POST",
         body: formData,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        // Don't set Content-Type when using FormData - let browser set it with boundary
       });
 
       // console.log("Response status:", res.status);

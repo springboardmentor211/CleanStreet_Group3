@@ -27,6 +27,7 @@ export default function IssueDetails() {
         const res = await fetch(`http://localhost:5000/api/issues/${id}`);
         const data = await res.json();
         setIssue(data);
+        console.log(data);
         setComments(data.comments || []);
       } catch (err) {
         setIssue(null);

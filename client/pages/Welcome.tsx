@@ -127,7 +127,7 @@ export default function Welcome() {
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <Link
-                  to="/reports"
+                  to="/complaints"
                   className="flex items-center space-x-2 border border-white/30 text-white px-8 py-4 rounded-cs-button text-lg hover:bg-white/5 transition-colors"
                 >
                   <span>View Community Reports</span>
