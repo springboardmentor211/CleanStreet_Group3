@@ -1,6 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { useEffect, useState } from "react";
 import { issuesAPI } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { 
   FileText, 
   Clock, 
@@ -78,32 +79,65 @@ function ActivityItem({ title, time }: ActivityItemProps) {
 }
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState({
     total: 0,
-    Received: 0,
+    open: 0,
     inProgress: 0,
     resolved: 0,
-    recentActivity: [],
   });
+  const [userRecentActivity, setUserRecentActivity] = useState([]);
+  const [loadingActivity, setLoadingActivity] = useState(true);
 
   useEffect(() => {
     async function fetchDashboardStats() {
       try {
+        // Fetch overall statistics for all users
         const res = await issuesAPI.getDashboardStats();
         setMetrics({
           total: res.total || 0,
-          Received: res.Received || 0,
+          open: res.open || 0,
           inProgress: res.inProgress || 0,
           resolved: res.resolved || 0,
-          recentActivity: Array.isArray(res.recentActivity) ? res.recentActivity : [],
         });
         // console.log("Fetched Dashboard Metrics:", res);
       } catch (err) {
         console.error("Dashboard metrics error:", err);
       }
     }
+
+    async function fetchUserRecentActivity() {
+      // Try to get user ID from auth context or localStorage
+      const userId = user?.id || (() => {
+        try {
+          const storedUser = localStorage.getItem('currentUser');
+          return storedUser ? JSON.parse(storedUser).id : null;
+        } catch {
+          return null;
+        }
+      })();
+
+      if (userId) {
+        setLoadingActivity(true);
+        try {
+          // Fetch recent activity for the logged-in user only
+          const res = await issuesAPI.getUserRecentActivity(userId, 3);
+          setUserRecentActivity(Array.isArray(res.recentActivity) ? res.recentActivity : []);
+          // console.log("Fetched User Recent Activity:", res);
+        } catch (err) {
+          console.error("User recent activity error:", err);
+          setUserRecentActivity([]);
+        } finally {
+          setLoadingActivity(false);
+        }
+      } else {
+        setLoadingActivity(false);
+      }
+    }
+
     fetchDashboardStats();
-  }, []);
+    fetchUserRecentActivity();
+  }, [user]);
 
   const stats = [
     {
@@ -112,8 +146,8 @@ export default function Dashboard() {
       icon: <FileText className="w-[35px] h-[35px] text-white" />
     },
     {
-      title: "Received", 
-      value: metrics.Received,
+      title: "Open", 
+      value: metrics.open,
       icon: <Clock className="w-[35px] h-[35px] text-white" />
     },
     {
@@ -130,24 +164,16 @@ export default function Dashboard() {
 
   const defaultActivity = [
     {
-      title: "Pothole on Main Street resolved",
-      time: "2 hours ago"
-    },
-    {
-      title: "Phulera streetlight issue resolved", 
-      time: "8 hours ago"
-    },
-    {
-      title: "Garbage dump complaint updated",
-      time: "11 hours ago"
+      title: "No recent issues found",
+      time: "Start by reporting an issue"
     }
   ];
 
-  const recentActivity = metrics.recentActivity && Array.isArray(metrics.recentActivity)
-    ? metrics.recentActivity
+  const recentActivity = userRecentActivity.length > 0 
+    ? userRecentActivity 
     : defaultActivity;
   
-  // console.log("Recent Activities: ",recentActivity);
+  // console.log("Recent Activities: ", recentActivity);
 
   const navigate = useNavigate();
 
@@ -188,7 +214,7 @@ export default function Dashboard() {
           {/* Recent Activity */}
           <div className="xl:col-span-2">
             <h2 className="text-white text-xl sm:text-2xl lg:text-[36px] font-bold mb-6">
-              Recent Activity
+              My Recent Issues
             </h2>
             <div className="border border-white/30 rounded-cs-card bg-background p-6 min-h-[387px]">
               {/* Add Button */}
@@ -204,14 +230,39 @@ export default function Dashboard() {
 
               {/* Activity List */}
               <div className="space-y-0">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="border-b border-white/30 last:border-b-0 py-6">
-                    <div className="text-white text-[32px] font-light mb-2">
-                      {activity.title}
-                    </div>
-                    
+                {loadingActivity ? (
+                  <div className="py-6 text-center">
+                    <div className="text-white text-xl font-thin">Loading your recent issues...</div>
                   </div>
-                ))}
+                ) : (
+                  recentActivity.map((activity, index) => (
+                    <div key={index} className="border-b border-white/30 last:border-b-0 py-6">
+                      <div className="text-white text-[32px] font-light mb-2">
+                        {activity.title || "No recent issues found"}
+                      </div>
+                      <div className="text-white text-xl font-thin">
+                        {activity.createdAt 
+                          ? new Date(activity.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })
+                          : activity.time || "Start by reporting an issue"
+                        }
+                      </div>
+                      {activity.category && (
+                        <div className="text-cs-blue-secondary text-lg font-normal mt-1">
+                          Category: {activity.category}
+                        </div>
+                      )}
+                      {activity.status && (
+                        <div className="text-white/70 text-lg font-normal mt-1">
+                          Status: {activity.status}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

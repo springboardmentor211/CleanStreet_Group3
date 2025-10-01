@@ -305,15 +305,25 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/stats/dashboard', async (req, res) => {
   try {
     const totalIssues = await Issue.countDocuments({ isDeleted: { $ne: true } });
-    const openIssues = await Issue.countDocuments({ status: 'open', isDeleted: { $ne: true } });
-    const inProgressIssues = await Issue.countDocuments({ status: 'in-progress', isDeleted: { $ne: true } });
-    const resolvedIssues = await Issue.countDocuments({ status: 'resolved', isDeleted: { $ne: true } });
+    // Try different status values to match what's in the database
+    const openIssues = await Issue.countDocuments({ 
+      $or: [{ status: 'open' }, { status: 'Open' }, { status: 'received' }, { status: 'Received' }], 
+      isDeleted: { $ne: true } 
+    });
+    const inProgressIssues = await Issue.countDocuments({ 
+      $or: [{ status: 'in-progress' }, { status: 'In Progress' }, { status: 'inProgress' }], 
+      isDeleted: { $ne: true } 
+    });
+    const resolvedIssues = await Issue.countDocuments({ 
+      $or: [{ status: 'resolved' }, { status: 'Resolved' }], 
+      isDeleted: { $ne: true } 
+    });
 
     // Get recent activity (last 10 resolved or updated issues)
     const recentActivity = await Issue.find({
       isDeleted: { $ne: true },
       $or: [
-        { status: 'resolved' },
+        { status: { $in: ['resolved', 'Resolved'] } },
         { updatedAt: { $gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } }
       ]
     })
@@ -327,6 +337,30 @@ router.get('/stats/dashboard', async (req, res) => {
       inProgress: inProgressIssues,
       resolved: resolvedIssues,
       recentActivity
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// Get user-specific recent activity for dashboard
+router.get('/stats/user-activity/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 3 } = req.query;
+
+    // Get recent issues by the specific user (last 3 issues)
+    const userRecentActivity = await Issue.find({
+      reportedBy: userId,
+      isDeleted: { $ne: true }
+    })
+    .sort({ createdAt: -1 })
+    .limit(parseInt(limit))
+    .populate('reportedBy', 'username fullName');
+
+    res.json({
+      recentActivity: userRecentActivity
     });
   } catch (error) {
     console.error(error.message);

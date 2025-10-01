@@ -334,6 +334,10 @@ export const issuesAPI = {
   getDashboardStats: async () => {
     return apiRequest('/issues/stats/dashboard');
   },
+
+  getUserRecentActivity: async (userId: string, limit: number = 3) => {
+    return apiRequest(`/issues/stats/user-activity/${userId}?limit=${limit}`);
+  },
 };
 
 // Admin API
