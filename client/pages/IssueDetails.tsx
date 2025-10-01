@@ -142,7 +142,23 @@ export default function IssueDetails() {
           <button
             type="button"
             className="flex items-center gap-2 focus:outline-none"
-            onClick={() => navigate('/maps')}
+            onClick={() => {
+              // Navigate to maps with issue coordinates
+              let lat, lng;
+              if (issue.location && issue.location.coordinates) {
+                lng = issue.location.coordinates[0];
+                lat = issue.location.coordinates[1];
+              } else if (issue.location && issue.location.latitude && issue.location.longitude) {
+                lat = issue.location.latitude;
+                lng = issue.location.longitude;
+              }
+              
+              if (lat && lng) {
+                navigate(`/maps?issueId=${issue._id}&lat=${lat}&lng=${lng}`);
+              } else {
+                navigate('/maps');
+              }
+            }}
             style={{ background: "none", border: "none", padding: 0, margin: 0, cursor: "pointer" }}
           >
             <MapPin className="w-6 h-6 text-white" />
