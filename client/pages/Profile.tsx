@@ -4,14 +4,15 @@ import { Layout } from "@/components/Layout";
 import { Edit, Camera, Lock, Shield, User, BarChart3, Upload } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { authAPI, issuesAPI, debugAPI } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const [updateMessage, setUpdateMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [userInfo, setUserInfo] = useState({
     fullName: "",
     username: "",
@@ -183,9 +184,10 @@ export default function Profile() {
               localStorage.removeItem('currentUser');
               
               // Show user-friendly message and redirect
-              setUpdateMessage({ 
-                type: 'error', 
-                text: 'Your user account was not found in the database. Please register or login again.' 
+              toast({
+                variant: "destructive",
+                title: "Account Not Found",
+                description: "Your user account was not found in the database. Please register or login again."
               });
               
               setTimeout(() => {
@@ -195,9 +197,10 @@ export default function Profile() {
             }
           }
           
-          setUpdateMessage({ 
-            type: 'error', 
-            text: `Failed to load user data: ${error instanceof Error ? error.message : 'Unknown error'}. Try clearing your session and logging in again.` 
+          toast({
+            variant: "destructive",
+            title: "Failed to Load Profile",
+            description: `Failed to load user data: ${error instanceof Error ? error.message : 'Unknown error'}. Try clearing your session and logging in again.`
           });
         } finally {
           setLoading(false);
@@ -222,11 +225,14 @@ export default function Profile() {
   const handleSave = async () => {
     try {
       setUpdateLoading(true);
-      setUpdateMessage(null);
       
       // Validation
       if (!userInfo.fullName.trim()) {
-        setUpdateMessage({ type: 'error', text: 'Full name is required' });
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: "Full name is required"
+        });
         return;
       }
       
@@ -258,13 +264,17 @@ export default function Profile() {
         localStorage.setItem('currentUser', JSON.stringify(updatedStoredUser));
       }
       
-      setUpdateMessage({ type: 'success', text: 'Profile updated successfully!' });
+      toast({
+        title: "Profile Updated",
+        description: "Profile updated successfully!"
+      });
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to update profile:", error);
-      setUpdateMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'Failed to update profile. Please try again.' 
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : 'Failed to update profile. Please try again.'
       });
     } finally {
       setUpdateLoading(false);
@@ -281,19 +291,26 @@ export default function Profile() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setUpdateMessage({ type: 'error', text: 'Please select a valid image file.' });
+      toast({
+        variant: "destructive",
+        title: "Invalid File Type",
+        description: "Please select a valid image file."
+      });
       return;
     }
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setUpdateMessage({ type: 'error', text: 'Image file size must be less than 5MB.' });
+      toast({
+        variant: "destructive",
+        title: "File Too Large",
+        description: "Image file size must be less than 5MB."
+      });
       return;
     }
 
     try {
       setImageUploading(true);
-      setUpdateMessage(null);
 
       const response = await authAPI.uploadProfileImage(file);
       
@@ -311,12 +328,16 @@ export default function Profile() {
         localStorage.setItem('currentUser', JSON.stringify(updatedStoredUser));
       }
 
-      setUpdateMessage({ type: 'success', text: 'Profile image updated successfully!' });
+      toast({
+        title: "Profile Image Updated",
+        description: "Profile image updated successfully!"
+      });
     } catch (error) {
       console.error('Profile image upload error:', error);
-      setUpdateMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'Failed to upload profile image. Please try again.' 
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : 'Failed to upload profile image. Please try again.'
       });
     } finally {
       setImageUploading(false);
@@ -329,6 +350,39 @@ export default function Profile() {
 
   const handleCameraClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleChangePassword = async () => {
+    if (!userInfo.email) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Email is required to reset password."
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Sending Email",
+        description: "Sending password reset email..."
+      });
+      
+      const response = await authAPI.forgotPassword(userInfo.email);
+      
+      toast({
+        title: "Email Sent",
+        description: "Password reset link has been sent to your email. Please check your inbox and follow the instructions to reset your password."
+      });
+      
+    } catch (error) {
+      console.error('Change password error:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Email",
+        description: error instanceof Error ? error.message : 'Failed to send password reset email. Please try again.'
+      });
+    }
   };
 
   const formatJoinDate = (dateString: string) => {
@@ -399,7 +453,6 @@ export default function Profile() {
               <button
                 onClick={() => {
                   setIsEditing(!isEditing);
-                  setUpdateMessage(null);
                 }}
                 className="absolute top-6 right-6 flex items-center space-x-2 border border-white/30 rounded-cs-input px-4 py-3 hover:bg-white/5 transition-colors"
               >
@@ -497,30 +550,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Update Message */}
-              {updateMessage && (
-                <div className={`mb-6 p-4 rounded-cs-input border ${
-                  updateMessage.type === 'success' 
-                    ? 'border-green-500 bg-green-500/10 text-green-400' 
-                    : 'border-red-500 bg-red-500/10 text-red-400'
-                }`}>
-                  <div className="flex justify-between items-start">
-                    <span>{updateMessage.text}</span>
-                    {updateMessage.type === 'error' && (
-                      <button
-                        onClick={() => {
-                          localStorage.removeItem('authToken');
-                          localStorage.removeItem('currentUser');
-                          navigate('/login');
-                        }}
-                        className="ml-4 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                      >
-                        Clear Session & Login
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
+
 
               {/* Form Fields Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -628,7 +658,6 @@ export default function Profile() {
                   <button
                     onClick={() => {
                       setIsEditing(false);
-                      setUpdateMessage(null);
                     }}
                     className="px-8 py-3 border border-white/30 text-white font-medium rounded-cs-input hover:bg-white/5 transition-colors"
                     disabled={updateLoading}
@@ -716,7 +745,11 @@ export default function Profile() {
 
             {/* Security Options */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <button className="border border-white/30 rounded-cs-input bg-background p-6 text-left hover:bg-white/5 transition-colors">
+              <button 
+                onClick={handleChangePassword}
+                disabled={!userInfo.email || updateLoading}
+                className="border border-white/30 rounded-cs-input bg-background p-6 text-left hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <div className="flex items-center space-x-4">
                   <Lock className="w-7 h-7 text-white" />
                   <span className="text-white text-[22px] font-light">Change Password</span>
