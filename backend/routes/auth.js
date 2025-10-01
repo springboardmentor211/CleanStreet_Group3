@@ -238,19 +238,26 @@ router.post('/reset-password', [
   body('token', 'Reset token is required').not().isEmpty(),
   body('newPassword', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
 ], async (req, res) => {
+  console.log('=== Reset Password Route Called ===');
+  console.log('Request body:', req.body);
+  console.log('Request body keys:', Object.keys(req.body));
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
   const { token, newPassword } = req.body;
+  console.log('Extracted token length:', token ? token.length : 'No token');
+  console.log('Extracted newPassword length:', newPassword ? newPassword.length : 'No newPassword');
 
   try {
     // Find user by token and check if token is not expired
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() }
-    });
+    }).select('+resetPasswordToken +resetPasswordExpires +password');
     
     if (!user) {
       return res.status(400).json({ message: 'Invalid or expired reset token' });
@@ -410,6 +417,28 @@ router.get('/debug/user/:id', async (req, res) => {
         totalUsers: await User.countDocuments()
       });
     }
+  } catch (error) {
+    console.error('Debug endpoint error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug endpoint to test reset password body
+router.post('/debug/reset-password-test', async (req, res) => {
+  try {
+    console.log('Debug reset password test - Request body:', req.body);
+    console.log('Debug reset password test - Body keys:', Object.keys(req.body));
+    
+    const { token, newPassword } = req.body;
+    
+    res.json({
+      success: true,
+      received: {
+        token: token ? `Token of length ${token.length}` : 'No token',
+        newPassword: newPassword ? `Password of length ${newPassword.length}` : 'No newPassword'
+      },
+      body: req.body
+    });
   } catch (error) {
     console.error('Debug endpoint error:', error);
     res.status(500).json({ error: error.message });

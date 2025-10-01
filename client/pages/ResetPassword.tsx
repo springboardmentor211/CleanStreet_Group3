@@ -10,7 +10,25 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token');
+  let token = searchParams.get('token');
+  
+  // Debug logging
+  console.log('=== ResetPassword Component Debug ===');
+  console.log('Current URL:', window.location.href);
+  console.log('Search params:', searchParams.toString());
+  console.log('Raw extracted token:', token);
+  
+  // Fix: If token contains a URL, extract just the JWT part
+  if (token && token.includes('reset-password?token=')) {
+    const tokenMatch = token.match(/token=([^&]+)/);
+    if (tokenMatch) {
+      token = tokenMatch[1];
+      console.log('Extracted JWT token from URL:', token);
+    }
+  }
+  
+  console.log('Final token to use:', token);
+  console.log('Token length:', token ? token.length : 'No token');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

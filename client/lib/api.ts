@@ -23,12 +23,12 @@ const removeAuthToken = () => localStorage.removeItem('authToken');
 const apiRequest = async <T = any>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
   const token = getAuthToken();
   
-  // console.log(`=== API Request Debug [${endpoint}] ===`);
-  // console.log("API_BASE_URL:", API_BASE_URL);
-  // console.log("Endpoint:", endpoint);
-  // console.log("Full URL:", `${API_BASE_URL}${endpoint}`);
-  // console.log("Auth token:", token ? `${token.substring(0, 20)}...` : 'No token');
-  // console.log("Request options:", options);
+  console.log(`=== API Request Debug [${endpoint}] ===`);
+  console.log("API_BASE_URL:", API_BASE_URL);
+  console.log("Endpoint:", endpoint);
+  console.log("Full URL:", `${API_BASE_URL}${endpoint}`);
+  console.log("Auth token:", token ? `${token.substring(0, 20)}...` : 'No token');
+  console.log("Request options:", options);
   
   const config: RequestInit = {
     headers: {
@@ -50,21 +50,21 @@ const apiRequest = async <T = any>(endpoint: string, options: RequestInit = {}):
       }
     };
 
-    // console.log("Final fetch config:", fetchConfig);
+    console.log("Final fetch config:", fetchConfig);
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchConfig);
-    // console.log(`API Request [${endpoint}] Response:`, response);
-    // console.log(`Response status: ${response.status} ${response.statusText}`);
-    // console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
+    console.log(`API Request [${endpoint}] Response:`, response);
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+    console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
     
     let data: ApiResponse<T> = {};
     try {
       const responseText = await response.text();
-      // console.log(`Raw response text [${endpoint}]:`, responseText);
+      console.log(`Raw response text [${endpoint}]:`, responseText);
       
       if (responseText) {
         data = JSON.parse(responseText) as ApiResponse<T>;
-        // console.log(`Parsed response data [${endpoint}]:`, data);
+        console.log(`Parsed response data [${endpoint}]:`, data);
       }
     } catch (e) {
       console.warn('Failed to parse JSON response', e);
@@ -196,9 +196,16 @@ export const authAPI = {
   },
 
   resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
+    console.log('=== resetPassword called ===');
+    console.log('token:', token ? `${token.substring(0, 50)}...` : 'No token');
+    console.log('newPassword:', newPassword ? `Length: ${newPassword.length}` : 'No password');
+    
+    const requestBody = { token, newPassword };
+    console.log('Request body to send:', requestBody);
+    
     const response = await apiRequest<{ message: string }>('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify(requestBody),
       headers: {
         'Content-Type': 'application/json'
       }
