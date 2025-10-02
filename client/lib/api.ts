@@ -303,10 +303,11 @@ export const issuesAPI = {
   },
 
   vote: async (id: string, type: 'up' | 'down') => {
-    return apiRequest(`/issues/${id}/vote`, {
+    const response = await apiRequest(`/issues/${id}/vote`, {
       method: 'POST',
       body: JSON.stringify({ type }),
     });
+    return { data: response };
   },
 
   addComment: async (id: string, text: string) => {

@@ -8,27 +8,43 @@ import { IssueCard, Issue } from "@/components/IssueCard";
 export default function CommunityReports() {
 
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [userVotes, setUserVotes] = useState<Record<string, 'up' | 'down' | null>>({});
 
   useEffect(() => {
     async function fetchIssues() {
       try {
-        const res = await fetch("http://localhost:5000/api/issues");
+        const headers: Record<string, string> = {};
+        const token = localStorage.getItem('token');
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const res = await fetch("http://localhost:5000/api/issues", { headers });
         const data = await res.json();
-        // console.log("Fetched issues from backend:", data);
-        // Provide defaults for missing properties
-        const safeIssues = (data.issues || []).map(issue => ({
-          ...issue,
-          icon: issue.icon || "road",
-          upvotes: typeof issue.upvotes === "number" ? issue.upvotes : 0,
-          downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
-          comments: typeof issue.comments === "number" ? issue.comments : 0,
-          timeAgo: issue.timeAgo || "recently",
-          status: issue.status || "Received",
-          location: typeof issue.location === "object" && issue.location !== null
-            ? `(${issue.location.coordinates?.[1]}, ${issue.location.coordinates?.[0]})`
-            : (issue.location || "Unknown location")
-        }));
+        
+        // Provide defaults for missing properties and extract user votes
+        const votesMap: Record<string, 'up' | 'down' | null> = {};
+        const safeIssues = (data.issues || []).map(issue => {
+          const issueId = issue._id || issue.id;
+          votesMap[issueId] = issue.userVote || null;
+          
+          return {
+            ...issue,
+            icon: issue.icon || "road",
+            upvotes: typeof issue.upvotes === "number" ? issue.upvotes : 0,
+            downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
+            comments: typeof issue.comments === "number" ? issue.comments : 
+              (Array.isArray(issue.comments) ? issue.comments.length : 0),
+            timeAgo: issue.timeAgo || "recently",
+            status: issue.status || "Received",
+            location: typeof issue.location === "object" && issue.location !== null
+              ? `(${issue.location.coordinates?.[1]}, ${issue.location.coordinates?.[0]})`
+              : (issue.location || "Unknown location")
+          };
+        });
+        
         setIssues(safeIssues);
+        setUserVotes(votesMap);
       } catch (err) {
         console.error("Error fetching issues:", err);
       }
@@ -39,25 +55,62 @@ export default function CommunityReports() {
   const handleVote = async (e: React.MouseEvent, issueId: string, type: "up" | "down") => {
     e.stopPropagation(); // Prevent navigation when clicking vote buttons
     
+    const currentUserVote = userVotes[issueId];
+    const isUndoing = currentUserVote === type;
+    const isChanging = currentUserVote && currentUserVote !== type;
+    
     try {
       // Optimistic UI update
       setIssues(prev => prev.map(issue => {
         if (issue.id === issueId || issue._id === issueId) {
+          let newUpvotes = issue.upvotes;
+          let newDownvotes = issue.downvotes;
+          
+          if (isUndoing) {
+            // Undoing current vote
+            if (type === 'up') {
+              newUpvotes = Math.max(0, newUpvotes - 1);
+            } else {
+              newDownvotes = Math.max(0, newDownvotes - 1);
+            }
+          } else if (isChanging) {
+            // Changing vote type
+            if (currentUserVote === 'up') {
+              newUpvotes = Math.max(0, newUpvotes - 1);
+              newDownvotes += 1;
+            } else {
+              newDownvotes = Math.max(0, newDownvotes - 1);
+              newUpvotes += 1;
+            }
+          } else {
+            // New vote
+            if (type === 'up') {
+              newUpvotes += 1;
+            } else {
+              newDownvotes += 1;
+            }
+          }
+          
           return {
             ...issue,
-            upvotes: type === "up" ? issue.upvotes + 1 : issue.upvotes,
-            downvotes: type === "down" ? issue.downvotes + 1 : issue.downvotes,
-            voters: [...(issue.voters || []), 'current-user'] // Temporary optimistic update
+            upvotes: newUpvotes,
+            downvotes: newDownvotes
           };
         }
         return issue;
+      }));
+
+      // Update user votes optimistically
+      setUserVotes(prev => ({
+        ...prev,
+        [issueId]: isUndoing ? null : type
       }));
 
       const response = await fetch(`http://localhost:5000/api/issues/${issueId}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ type })
       });
@@ -67,39 +120,59 @@ export default function CommunityReports() {
         throw new Error(error.message || 'Failed to update vote');
       }
 
-      // Refresh issues to get the latest data
-      const updatedIssues = await fetch("http://localhost:5000/api/issues");
-      const data = await updatedIssues.json();
+      const result = await response.json();
       
-      const safeIssues = (data.issues || []).map(issue => ({
-        ...issue,
-        icon: issue.icon || "road",
-        upvotes: typeof issue.upvotes === "number" ? issue.upvotes : 0,
-        downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
-        comments: typeof issue.comments === "number" ? issue.comments : 0,
-        timeAgo: issue.timeAgo || "recently",
-        status: issue.status || "Received"
+      // Update with server response
+      setIssues(prev => prev.map(issue => {
+        if (issue.id === issueId || issue._id === issueId) {
+          return {
+            ...issue,
+            upvotes: result.upvotes,
+            downvotes: result.downvotes
+          };
+        }
+        return issue;
       }));
       
-      setIssues(safeIssues);
+      setUserVotes(prev => ({
+        ...prev,
+        [issueId]: result.userVote
+      }));
       
     } catch (error) {
       console.error('Error voting:', error);
-      // Revert optimistic update on error
-      const issuesResponse = await fetch("http://localhost:5000/api/issues");
-      const data = await issuesResponse.json();
-      const safeIssues = (data.issues || []).map(issue => ({
-        ...issue,
-        icon: issue.icon || "road",
-        upvotes: typeof issue.upvotes === "number" ? issue.upvotes : 0,
-        downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
-        comments: typeof issue.comments === "number" ? issue.comments : 0,
-        timeAgo: issue.timeAgo || "recently",
-        status: issue.status || "Received"
-      }));
-      setIssues(safeIssues);
       
-      // Show error toast
+      // Revert optimistic updates on error
+      const headers: Record<string, string> = {};
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const issuesResponse = await fetch("http://localhost:5000/api/issues", { headers });
+      const data = await issuesResponse.json();
+      
+      const votesMap: Record<string, 'up' | 'down' | null> = {};
+      const safeIssues = (data.issues || []).map(issue => {
+        const id = issue._id || issue.id;
+        votesMap[id] = issue.userVote || null;
+        
+        return {
+          ...issue,
+          icon: issue.icon || "road",
+          upvotes: typeof issue.upvotes === "number" ? issue.upvotes : 0,
+          downvotes: typeof issue.downvotes === "number" ? issue.downvotes : 0,
+          comments: typeof issue.comments === "number" ? issue.comments : 
+            (Array.isArray(issue.comments) ? issue.comments.length : 0),
+          timeAgo: issue.timeAgo || "recently",
+          status: issue.status || "Received"
+        };
+      });
+      
+      setIssues(safeIssues);
+      setUserVotes(votesMap);
+      
+      // Show error message
       alert(error.message || 'Failed to update vote');
     }
   };
@@ -116,14 +189,18 @@ export default function CommunityReports() {
 
         {/* Issues Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {issues.map((issue) => (
-            <div key={issue._id || issue.id} onClick={() => navigate(`/issues/${issue._id || issue.id}`)} style={{ cursor: "pointer" }}>
-              <IssueCard
-                issue={issue}
-                onVote={handleVote}
-              />
-            </div>
-          ))}
+          {issues.map((issue) => {
+            const issueId = issue._id || issue.id;
+            return (
+              <div key={issueId} onClick={() => navigate(`/issues/${issueId}`)} style={{ cursor: "pointer" }}>
+                <IssueCard
+                  issue={issue}
+                  onVote={handleVote}
+                  userVote={userVotes[issueId]}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Empty State for when no issues */}

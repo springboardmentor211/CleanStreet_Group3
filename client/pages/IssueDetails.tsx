@@ -17,6 +17,7 @@ export default function IssueDetails() {
   const [voteAnimating, setVoteAnimating] = useState(false);
   const [commentAnimating, setCommentAnimating] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [userVote, setUserVote] = useState(null); // 'up', 'down', or null
   
   const isAdmin = user?.role === 'admin';
 
@@ -24,9 +25,14 @@ export default function IssueDetails() {
     async function fetchIssue() {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/issues/${id}`);
+        const res = await fetch(`http://localhost:5000/api/issues/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         const data = await res.json();
         setIssue(data);
+        setUserVote(data.userVote || null);
         console.log(data);
         setComments(data.comments || []);
       } catch (err) {
@@ -39,17 +45,71 @@ export default function IssueDetails() {
   }, [id]);
 
   const handleVote = async (type: "up" | "down") => {
-    if (!issue) return;
+    if (!issue || !user) return;
     setVoteAnimating(true);
-    setIssue(prev => prev ? { ...prev, votes: (prev.votes || 0) + (type === "up" ? 1 : -1) } : prev);
+    
+    // Optimistic UI update
+    const isUndoing = userVote === type;
+    const isChanging = userVote && userVote !== type;
+    
+    let newUpvotes = issue.upvotes || 0;
+    let newDownvotes = issue.downvotes || 0;
+    let newUserVote = userVote;
+    
+    if (isUndoing) {
+      // Undoing current vote
+      if (type === 'up') {
+        newUpvotes = Math.max(0, newUpvotes - 1);
+      } else {
+        newDownvotes = Math.max(0, newDownvotes - 1);
+      }
+      newUserVote = null;
+    } else if (isChanging) {
+      // Changing vote type
+      if (userVote === 'up') {
+        newUpvotes = Math.max(0, newUpvotes - 1);
+        newDownvotes += 1;
+      } else {
+        newDownvotes = Math.max(0, newDownvotes - 1);
+        newUpvotes += 1;
+      }
+      newUserVote = type;
+    } else {
+      // New vote
+      if (type === 'up') {
+        newUpvotes += 1;
+      } else {
+        newDownvotes += 1;
+      }
+      newUserVote = type;
+    }
+    
+    setIssue(prev => prev ? { 
+      ...prev, 
+      upvotes: newUpvotes, 
+      downvotes: newDownvotes 
+    } : prev);
+    setUserVote(newUserVote);
+
     try {
-      await issuesAPI.vote(id, type);
-      const res = await issuesAPI.getById(id);
-      if (res && res.data) {
-        setIssue(res.data);
+      const response = await issuesAPI.vote(id, type);
+      if (response && response.data) {
+        // Update with server response
+        setIssue(prev => prev ? { 
+          ...prev, 
+          upvotes: response.data.upvotes, 
+          downvotes: response.data.downvotes 
+        } : prev);
+        setUserVote(response.data.userVote);
       }
     } catch (err) {
-      // Optionally show error toast
+      // Revert optimistic update on error
+      setIssue(prev => prev ? { 
+        ...prev, 
+        upvotes: issue.upvotes || 0, 
+        downvotes: issue.downvotes || 0 
+      } : prev);
+      setUserVote(userVote);
     } finally {
       setTimeout(() => setVoteAnimating(false), 400);
     }
@@ -247,17 +307,29 @@ export default function IssueDetails() {
           <div className="flex gap-6 mt-2">
             <button
               onClick={() => handleVote("up")}
-              className={`flex items-center gap-2 px-4 py-2 rounded bg-cs-blue-primary text-white font-bold hover:bg-cs-blue-dark transition-transform ${voteAnimating ? "scale-105 ring-2 ring-cs-blue-primary" : ""}`}
-              disabled={voteAnimating}
+              className={`flex items-center gap-2 px-4 py-2 rounded font-bold transition-all ${
+                userVote === 'up' 
+                  ? 'bg-green-600 text-white hover:bg-green-700 ring-2 ring-green-400' 
+                  : 'bg-cs-blue-primary text-white hover:bg-cs-blue-dark'
+              } ${voteAnimating ? "scale-105" : ""}`}
+              disabled={voteAnimating || !user}
+              title={!user ? "Please log in to vote" : userVote === 'up' ? "Click to undo your upvote" : "Click to upvote"}
             >
-              <ThumbsUp className="w-5 h-5" /> Upvote ({issue.votes || 0})
+              <ThumbsUp className="w-5 h-5" /> 
+              {userVote === 'up' ? 'Upvoted' : 'Upvote'} ({issue.upvotes || 0})
             </button>
             <button
               onClick={() => handleVote("down")}
-              className={`flex items-center gap-2 px-4 py-2 rounded bg-red-600 text-white font-bold hover:bg-red-700 transition-transform ${voteAnimating ? "scale-105 ring-2 ring-red-600" : ""}`}
-              disabled={voteAnimating}
+              className={`flex items-center gap-2 px-4 py-2 rounded font-bold transition-all ${
+                userVote === 'down' 
+                  ? 'bg-orange-600 text-white hover:bg-orange-700 ring-2 ring-orange-400' 
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              } ${voteAnimating ? "scale-105" : ""}`}
+              disabled={voteAnimating || !user}
+              title={!user ? "Please log in to vote" : userVote === 'down' ? "Click to undo your downvote" : "Click to downvote"}
             >
-              <ThumbsDown className="w-5 h-5" /> Downvote
+              <ThumbsDown className="w-5 h-5" /> 
+              {userVote === 'down' ? 'Downvoted' : 'Downvote'} ({issue.downvotes || 0})
             </button>
           </div>
         </div>

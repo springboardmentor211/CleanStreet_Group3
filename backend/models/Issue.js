@@ -82,8 +82,16 @@ const IssueSchema = new mongoose.Schema({
     default: 0
   },
   voters: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    voteType: {
+      type: String,
+      enum: ['up', 'down'],
+      required: true
+    }
   }],
   estimatedResolution: {
     type: Date

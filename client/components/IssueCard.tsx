@@ -16,11 +16,13 @@ export interface Issue {
   _id?: string; // MongoDB ID
   votes?: number; // Legacy votes field
   voters?: string[]; // Array of user IDs who voted
+  userVote?: 'up' | 'down' | null; // Current user's vote
 }
 
 interface IssueCardProps {
   issue: Issue;
   onVote: (e: React.MouseEvent, issueId: string, type: "up" | "down") => void;
+  userVote?: 'up' | 'down' | null;
 }
 
 const statusConfig = {
@@ -46,7 +48,7 @@ const statusConfig = {
   }
 };
 
-export function IssueCard({ issue, onVote }: IssueCardProps) {
+export function IssueCard({ issue, onVote, userVote }: IssueCardProps) {
   // Ensure status is properly cased to match our config
   const normalizedStatus = issue.status as keyof typeof statusConfig;
   const statusStyle = statusConfig[normalizedStatus] || {
@@ -119,21 +121,29 @@ export function IssueCard({ issue, onVote }: IssueCardProps) {
           {/* Upvotes */}
           <button
             onClick={(e) => onVote(e, issue.id || issue._id || '', "up")}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-            disabled={issue.voters?.includes('current-user')}
+            className={`flex items-center space-x-3 transition-all ${
+              userVote === 'up' 
+                ? 'text-green-400 scale-110' 
+                : 'text-white hover:text-green-300'
+            }`}
+            title={userVote === 'up' ? 'Click to undo your upvote' : 'Click to upvote'}
           >
-            <ThumbsUp className="w-5 h-5 text-white" />
-            <span className="text-white text-2xl font-bold">{issue.upvotes}</span>
+            <ThumbsUp className={`w-5 h-5 ${userVote === 'up' ? 'fill-current' : ''}`} />
+            <span className="text-2xl font-bold">{issue.upvotes || 0}</span>
           </button>
 
           {/* Downvotes */}
           <button
             onClick={(e) => onVote(e, issue.id || issue._id || '', "down")}
-            className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
-            disabled={issue.voters?.includes('current-user')}
+            className={`flex items-center space-x-3 transition-all ${
+              userVote === 'down' 
+                ? 'text-orange-400 scale-110' 
+                : 'text-white hover:text-orange-300'
+            }`}
+            title={userVote === 'down' ? 'Click to undo your downvote' : 'Click to downvote'}
           >
-            <ThumbsDown className="w-5 h-5 text-white" />
-            <span className="text-white text-2xl  font-bold">{issue.downvotes}</span>
+            <ThumbsDown className={`w-5 h-5 ${userVote === 'down' ? 'fill-current' : ''}`} />
+            <span className="text-2xl font-bold">{issue.downvotes || 0}</span>
           </button>
         </div>
 

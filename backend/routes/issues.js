@@ -35,10 +35,40 @@ router.get('/', async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
+    // Get user's vote status if authenticated
+    let userId = null;
+    const authHeader = req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        userId = decoded.user?.id || decoded.user?._id || decoded.id || decoded._id;
+      } catch (err) {
+        // Token invalid or expired, continue without user vote info
+      }
+    }
+
+    // Add user vote information to each issue
+    const issuesWithUserVotes = issues.map(issue => {
+      const issueObj = issue.toObject();
+      
+      if (userId) {
+        const existingVote = issue.voters.find(vote => 
+          vote.user && vote.user.toString() === userId.toString()
+        );
+        issueObj.userVote = existingVote ? existingVote.voteType : null;
+      } else {
+        issueObj.userVote = null;
+      }
+      
+      return issueObj;
+    });
+
     const total = await Issue.countDocuments(filter);
 
     res.json({
-      issues,
+      issues: issuesWithUserVotes,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
       total
@@ -61,7 +91,31 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Issue not found' });
     }
 
-    res.json(issue);
+    // Get user's vote status if authenticated
+    let userVote = null;
+    const authHeader = req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+        const userId = decoded.user?.id || decoded.user?._id || decoded.id || decoded._id;
+        
+        if (userId) {
+          const existingVote = issue.voters.find(vote => 
+            vote.user && vote.user.toString() === userId.toString()
+          );
+          userVote = existingVote ? existingVote.voteType : null;
+        }
+      } catch (err) {
+        // Token invalid or expired, continue without user vote info
+      }
+    }
+
+    const issueData = issue.toObject();
+    issueData.userVote = userVote;
+
+    res.json(issueData);
   } catch (error) {
     console.error(error.message);
     if (error.kind === 'ObjectId') {
@@ -210,29 +264,66 @@ router.post('/:id/vote', auth, async (req, res) => {
     const { type } = req.body; // 'up' or 'down'
     const userId = req.user.id || req.user._id;
 
-    // Check if user already voted
-    const hasVoted = issue.voters.includes(userId);
-    if (hasVoted) {
-      return res.status(400).json({ message: 'You have already voted on this issue' });
-    }
-
-    // Update vote count
-    if (type === 'up') {
-      issue.upvotes += 1;
-    } else if (type === 'down') {
-      issue.downvotes += 1;
-    } else {
+    if (!['up', 'down'].includes(type)) {
       return res.status(400).json({ message: 'Invalid vote type' });
     }
 
-    // Add user to voters list
-    issue.voters.push(userId);
+    // Find existing vote by this user
+    const existingVoteIndex = issue.voters.findIndex(vote => 
+      vote.user && vote.user.toString() === userId.toString()
+    );
+
+    if (existingVoteIndex !== -1) {
+      const existingVote = issue.voters[existingVoteIndex];
+      
+      // If same vote type, undo the vote
+      if (existingVote.voteType === type) {
+        // Remove the vote
+        issue.voters.splice(existingVoteIndex, 1);
+        if (type === 'up') {
+          issue.upvotes = Math.max(0, issue.upvotes - 1);
+        } else {
+          issue.downvotes = Math.max(0, issue.downvotes - 1);
+        }
+      } else {
+        // Change vote type
+        // First, decrease the count for the old vote
+        if (existingVote.voteType === 'up') {
+          issue.upvotes = Math.max(0, issue.upvotes - 1);
+          issue.downvotes += 1;
+        } else {
+          issue.downvotes = Math.max(0, issue.downvotes - 1);
+          issue.upvotes += 1;
+        }
+        // Update the vote type
+        issue.voters[existingVoteIndex].voteType = type;
+      }
+    } else {
+      // New vote
+      if (type === 'up') {
+        issue.upvotes += 1;
+      } else {
+        issue.downvotes += 1;
+      }
+      
+      issue.voters.push({
+        user: userId,
+        voteType: type
+      });
+    }
+
     await issue.save();
+
+    // Get user's current vote status
+    const currentUserVote = issue.voters.find(vote => 
+      vote.user && vote.user.toString() === userId.toString()
+    );
 
     res.json({ 
       success: true,
       upvotes: issue.upvotes,
-      downvotes: issue.downvotes
+      downvotes: issue.downvotes,
+      userVote: currentUserVote ? currentUserVote.voteType : null
     });
   } catch (error) {
     console.error('Vote error:', error.message);
