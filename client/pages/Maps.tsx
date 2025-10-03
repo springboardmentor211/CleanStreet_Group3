@@ -42,8 +42,68 @@ export default function Maps() {
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const searchMarkerRef = useRef(null);
+  const animatedMarkerRef = useRef(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Add CSS animations
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pinpoint-pulse {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
+        }
+        25% {
+          transform: scale(1.1);
+          box-shadow: 0 0 0 8px rgba(255, 68, 68, 0.4);
+        }
+        50% {
+          transform: scale(1.2);
+          box-shadow: 0 0 0 15px rgba(255, 68, 68, 0.2);
+        }
+        75% {
+          transform: scale(1.1);
+          box-shadow: 0 0 0 8px rgba(255, 68, 68, 0.4);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
+        }
+      }
+      
+      @keyframes pinpoint-glow {
+        0%, 100% {
+          filter: drop-shadow(0 0 2px rgba(255, 68, 68, 0.8));
+        }
+        50% {
+          filter: drop-shadow(0 0 8px rgba(255, 68, 68, 1)) drop-shadow(0 0 15px rgba(255, 68, 68, 0.6));
+        }
+      }
+      
+      .highlighted-marker {
+        z-index: 1000 !important;
+        animation: pinpoint-glow 1s ease-in-out 2;
+      }
+      
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Function to clear all markers
   const clearMarkers = () => {
@@ -53,10 +113,15 @@ export default function Maps() {
       }
     });
     markersRef.current = [];
+    
+    // Clear animated marker reference
+    if (animatedMarkerRef.current) {
+      animatedMarkerRef.current = null;
+    }
   };
 
   // Function to add markers for issues
-  const addIssueMarkers = (issuesToShow) => {
+  const addIssueMarkers = (issuesToShow, highlightIssueId = null) => {
     if (!mapRef.current) return;
     
     clearMarkers();
@@ -82,16 +147,27 @@ export default function Maps() {
           Other: "#d69e2e"
         };
         const color = categoryColors[issue.category] || "#718096";
+        
+        // Check if this is the highlighted issue
+        const isHighlighted = issue._id === highlightIssueId;
+        
         const marker = L.circleMarker([lat, lng], {
-          radius: 10,
-          color,
-          fillColor: color,
-          fillOpacity: 0.8,
-          weight: 2
+          radius: isHighlighted ? 15 : 10,
+          color: isHighlighted ? "#ff4444" : color,
+          fillColor: isHighlighted ? "#ff4444" : color,
+          fillOpacity: isHighlighted ? 0.9 : 0.8,
+          weight: isHighlighted ? 3 : 2,
+          className: isHighlighted ? 'highlighted-marker' : ''
         }).addTo(mapRef.current);
         
         // Store marker reference
         markersRef.current.push(marker);
+        
+        // If this is the highlighted marker, animate it
+        if (isHighlighted) {
+          animatedMarkerRef.current = marker;
+          animatePinpoint(marker);
+        }
         
         // Custom popup with clickable info icon
         const popupContent = document.createElement("div");
@@ -106,6 +182,118 @@ export default function Maps() {
         marker.bindPopup(popupContent);
       }
     });
+  };
+
+  // Function to animate the pinpoint
+  const animatePinpoint = (marker) => {
+    if (!marker || !mapRef.current) return;
+    
+    let cycle = 0;
+    const maxCycles = 2; // 2 cycles of animation
+    let isExpanding = true;
+    const originalRadius = 15;
+    const maxRadius = 28;
+    const minRadius = 10;
+    let animationSpeed = 60; // Start slower, get faster
+    
+    const animateStep = () => {
+      if (cycle >= maxCycles) {
+        // Reset to original state after animation with a smooth transition
+        const resetAnimation = () => {
+          const currentRadius = marker.getRadius();
+          if (currentRadius > originalRadius) {
+            marker.setRadius(currentRadius - 1);
+            setTimeout(resetAnimation, 30);
+          } else if (currentRadius < originalRadius) {
+            marker.setRadius(currentRadius + 1);
+            setTimeout(resetAnimation, 30);
+          }
+        };
+        resetAnimation();
+        return;
+      }
+      
+      const currentRadius = marker.getRadius();
+      
+      if (isExpanding) {
+        const increment = cycle === 0 ? 2 : 1.5; // First cycle is more dramatic
+        const newRadius = Math.min(currentRadius + increment, maxRadius);
+        marker.setRadius(newRadius);
+        
+        // Update opacity for breathing effect
+        marker.setStyle({
+          fillOpacity: 0.9 - (newRadius - originalRadius) * 0.02
+        });
+        
+        if (newRadius >= maxRadius) {
+          isExpanding = false;
+          animationSpeed = Math.max(30, animationSpeed - 10); // Speed up as we go
+        }
+      } else {
+        const decrement = cycle === 0 ? 2 : 1.5;
+        const newRadius = Math.max(currentRadius - decrement, minRadius);
+        marker.setRadius(newRadius);
+        
+        // Restore opacity
+        marker.setStyle({
+          fillOpacity: 0.9 - (originalRadius - newRadius) * 0.02
+        });
+        
+        if (newRadius <= minRadius) {
+          isExpanding = true;
+          cycle++;
+          // Add a slight pause between cycles
+          setTimeout(animateStep, 200);
+          return;
+        }
+      }
+      
+      // Continue animation with variable speed
+      setTimeout(animateStep, animationSpeed);
+    };
+    
+    // Add ripple effect
+    const createRippleEffect = () => {
+      const latlng = marker.getLatLng();
+      let rippleRadius = 5;
+      const maxRippleRadius = 40;
+      
+      const ripple = L.circle(latlng, {
+        radius: rippleRadius * 15, // Convert to meters approximately
+        color: '#ff4444',
+        fillColor: 'transparent',
+        weight: 2,
+        opacity: 0.8
+      }).addTo(mapRef.current);
+      
+      const rippleAnimation = () => {
+        rippleRadius += 2;
+        const opacity = 0.8 * (1 - rippleRadius / maxRippleRadius);
+        
+        ripple.setRadius(rippleRadius * 15);
+        ripple.setStyle({ opacity: opacity });
+        
+        if (rippleRadius < maxRippleRadius) {
+          setTimeout(rippleAnimation, 50);
+        } else {
+          mapRef.current.removeLayer(ripple);
+        }
+      };
+      
+      rippleAnimation();
+    };
+    
+    // Start animations with delays
+    setTimeout(() => {
+      createRippleEffect(); // First ripple
+    }, 200);
+    
+    setTimeout(() => {
+      createRippleEffect(); // Second ripple
+    }, 1200);
+    
+    // Start the main radius animation
+    setTimeout(animateStep, 300);
   };
 
   useEffect(() => {
@@ -135,12 +323,14 @@ export default function Maps() {
         setIssues(loadedIssues);
         console.log(`Loaded ${loadedIssues.length} issues`);
         console.log(loadedIssues);
-        addIssueMarkers(loadedIssues);
         
         // Check for URL parameters to focus on specific issue
         const issueId = searchParams.get('issueId');
         const lat = searchParams.get('lat');
         const lng = searchParams.get('lng');
+        
+        // Add markers with potential highlighting
+        addIssueMarkers(loadedIssues, issueId);
         
         if (issueId && mapRef.current) {
           // Find the specific issue and zoom to it
@@ -155,12 +345,65 @@ export default function Maps() {
               issueLng = targetIssue.location.longitude;
             }
             if (issueLat && issueLng) {
-              mapRef.current.setView([issueLat, issueLng], 16); // Close zoom for specific issue
+              // Show a temporary notification
+              const notification = document.createElement('div');
+              notification.innerHTML = `
+                <div style="
+                  position: absolute; 
+                  top: 20px; 
+                  left: 50%; 
+                  transform: translateX(-50%); 
+                  background: rgba(0, 0, 0, 0.8); 
+                  color: white; 
+                  padding: 12px 20px; 
+                  border-radius: 8px; 
+                  border-left: 4px solid #ff4444;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                  z-index: 1000; 
+                  font-family: system-ui;
+                  font-size: 14px;
+                  font-weight: 500;
+                  backdrop-filter: blur(8px);
+                  animation: slideIn 0.5s ease-out;
+                ">
+                  🎯 Showing issue: ${targetIssue.title}
+                </div>
+              `;
+              
+              const mapElement = document.getElementById('map');
+              if (mapElement) {
+                mapElement.appendChild(notification);
+                
+                // Remove notification after animation completes
+                setTimeout(() => {
+                  if (notification.parentNode) {
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translateX(-50%) translateY(-20px)';
+                    notification.style.transition = 'all 0.3s ease-out';
+                    setTimeout(() => {
+                      notification.parentNode.removeChild(notification);
+                    }, 300);
+                  }
+                }, 3000);
+              }
+              
+              // Zoom to the issue location with a slight delay for smooth transition
+              setTimeout(() => {
+                mapRef.current.setView([issueLat, issueLng], 16, {
+                  animate: true,
+                  duration: 1 // 1 second zoom animation
+                });
+              }, 500);
             }
           }
         } else if (lat && lng && mapRef.current) {
           // Direct coordinates provided
-          mapRef.current.setView([parseFloat(lat), parseFloat(lng)], 16);
+          setTimeout(() => {
+            mapRef.current.setView([parseFloat(lat), parseFloat(lng)], 16, {
+              animate: true,
+              duration: 1
+            });
+          }, 500);
         }
       } catch (err) {
         setIssues([]);
