@@ -31,28 +31,28 @@ const statusConfig = {
     textClass: "text-white",
     label: "Received"
   },
-  "In Progress": {
+  "in-progress": {
     bgClass: "bg-orange-500 hover:bg-orange-600 transition-colors", // Orange for active work
     textClass: "text-white", 
     label: "In Progress"
   },
-  "Resolved": {
+  "resolved": {
     bgClass: "bg-green-500 hover:bg-green-600 transition-colors", // Green for completed
     textClass: "text-white",
     label: "Resolved"
   },
-  "Closed": {
+  "closed": {
     bgClass: "bg-gray-600 hover:bg-gray-700 transition-colors", // Gray for closed
     textClass: "text-white",
     label: "Closed"
   },
   // Additional status variations that might come from backend
-  "Open": {
+  "open": {
     bgClass: "bg-blue-500 hover:bg-blue-600 transition-colors", // Same as Received
     textClass: "text-white",
     label: "Open"
   },
-  "Pending": {
+  "pending": {
     bgClass: "bg-yellow-500 hover:bg-yellow-600 transition-colors", // Yellow for pending
     textClass: "text-white",
     label: "Pending"

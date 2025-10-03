@@ -1018,17 +1018,32 @@ export default function IssueDetails() {
                   {/* Current Status Display */}
                   <div className="flex items-center gap-3">
                     <div className={`w-4 h-4 rounded-full ${
-                      issue.status === 'open' ? 'bg-red-500 animate-pulse' :
-                      issue.status === 'in-progress' ? 'bg-yellow-500 animate-pulse' :
-                      'bg-green-500'
+                      issue.status === 'Received' ? 'bg-gray-500 animate-pulse' :
+                      issue.status === 'Open' || issue.status === 'open' ? 'bg-red-500 animate-pulse' :
+                      issue.status === 'Pending' ? 'bg-orange-500 animate-pulse' :
+                      issue.status === 'Under Review' ? 'bg-purple-500 animate-pulse' :
+                      issue.status === 'Assigned' ? 'bg-blue-500 animate-pulse' :
+                      issue.status === 'In Progress' || issue.status === 'in-progress' ? 'bg-yellow-500 animate-pulse' :
+                      issue.status === 'Resolved' || issue.status === 'resolved' ? 'bg-green-500' :
+                      issue.status === 'Closed' || issue.status === 'closed' ? 'bg-slate-500' :
+                      'bg-gray-500'
                     }`}></div>
                     <span className={`px-4 py-2 rounded-xl text-sm font-bold ${
-                      issue.status === 'open' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
-                      issue.status === 'in-progress' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                      'bg-green-500/20 text-green-300 border border-green-500/30'
+                      issue.status === 'Received' ? 'bg-gray-500/20 text-gray-300 border border-gray-500/30' :
+                      issue.status === 'Open' || issue.status === 'open' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                      issue.status === 'Pending' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' :
+                      issue.status === 'Under Review' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                      issue.status === 'Assigned' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
+                      issue.status === 'In Progress' || issue.status === 'in-progress' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                      issue.status === 'Resolved' || issue.status === 'resolved' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                      issue.status === 'Closed' || issue.status === 'closed' ? 'bg-slate-500/20 text-slate-300 border border-slate-500/30' :
+                      'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                     }`}>
-                      {issue.status === 'open' ? 'Open' : 
-                       issue.status === 'in-progress' ? 'In Progress' : 'Resolved'}
+                      {issue.status === 'Open' || issue.status === 'open' ? 'Open' : 
+                       issue.status === 'In Progress' || issue.status === 'in-progress' ? 'In Progress' :
+                       issue.status === 'Resolved' || issue.status === 'resolved' ? 'Resolved' :
+                       issue.status === 'Closed' || issue.status === 'closed' ? 'Closed' :
+                       issue.status || 'Unknown'}
                     </span>
                   </div>
                   
@@ -1038,39 +1053,99 @@ export default function IssueDetails() {
                       <p className="text-sm font-medium text-white/70 mb-3">Update Status:</p>
                       
                       <button
-                        onClick={() => handleStatusUpdate('open')}
-                        disabled={isUpdatingStatus || issue.status === 'open'}
+                        onClick={() => handleStatusUpdate('Received')}
+                        disabled={isUpdatingStatus || issue.status === 'Received'}
                         className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                          issue.status === 'open' 
+                          issue.status === 'Received' 
+                            ? 'bg-gray-600 text-white cursor-default shadow-lg' 
+                            : 'bg-gray-600/10 text-gray-300 border border-gray-600/30 hover:bg-gray-600/20 hover:scale-105'
+                        }`}
+                      >
+                        {isUpdatingStatus && issue.status === 'Received' ? 'Updating...' : 'Mark as Received'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleStatusUpdate('Open')}
+                        disabled={isUpdatingStatus || issue.status === 'Open' || issue.status === 'open'}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                          issue.status === 'Open' || issue.status === 'open'
                             ? 'bg-red-600 text-white cursor-default shadow-lg' 
                             : 'bg-red-600/10 text-red-300 border border-red-600/30 hover:bg-red-600/20 hover:scale-105'
                         }`}
                       >
-                        {isUpdatingStatus && issue.status === 'open' ? 'Updating...' : 'Mark as Open'}
+                        {isUpdatingStatus && (issue.status === 'Open' || issue.status === 'open') ? 'Updating...' : 'Mark as Open'}
                       </button>
                       
                       <button
-                        onClick={() => handleStatusUpdate('in-progress')}
-                        disabled={isUpdatingStatus || issue.status === 'in-progress'}
+                        onClick={() => handleStatusUpdate('Pending')}
+                        disabled={isUpdatingStatus || issue.status === 'Pending'}
                         className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                          issue.status === 'in-progress' 
+                          issue.status === 'Pending' 
+                            ? 'bg-orange-600 text-white cursor-default shadow-lg' 
+                            : 'bg-orange-600/10 text-orange-300 border border-orange-600/30 hover:bg-orange-600/20 hover:scale-105'
+                        }`}
+                      >
+                        {isUpdatingStatus && issue.status === 'Pending' ? 'Updating...' : 'Mark as Pending'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleStatusUpdate('Under Review')}
+                        disabled={isUpdatingStatus || issue.status === 'Under Review'}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                          issue.status === 'Under Review' 
+                            ? 'bg-purple-600 text-white cursor-default shadow-lg' 
+                            : 'bg-purple-600/10 text-purple-300 border border-purple-600/30 hover:bg-purple-600/20 hover:scale-105'
+                        }`}
+                      >
+                        {isUpdatingStatus && issue.status === 'Under Review' ? 'Updating...' : 'Mark as Under Review'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleStatusUpdate('Assigned')}
+                        disabled={isUpdatingStatus || issue.status === 'Assigned'}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                          issue.status === 'Assigned' 
+                            ? 'bg-blue-600 text-white cursor-default shadow-lg' 
+                            : 'bg-blue-600/10 text-blue-300 border border-blue-600/30 hover:bg-blue-600/20 hover:scale-105'
+                        }`}
+                      >
+                        {isUpdatingStatus && issue.status === 'Assigned' ? 'Updating...' : 'Mark as Assigned'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleStatusUpdate('In Progress')}
+                        disabled={isUpdatingStatus || issue.status === 'In Progress' || issue.status === 'in-progress'}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                          issue.status === 'In Progress' || issue.status === 'in-progress'
                             ? 'bg-yellow-600 text-white cursor-default shadow-lg' 
                             : 'bg-yellow-600/10 text-yellow-300 border border-yellow-600/30 hover:bg-yellow-600/20 hover:scale-105'
                         }`}
                       >
-                        {isUpdatingStatus && issue.status === 'in-progress' ? 'Updating...' : 'Mark as In Progress'}
+                        {isUpdatingStatus && (issue.status === 'In Progress' || issue.status === 'in-progress') ? 'Updating...' : 'Mark as In Progress'}
                       </button>
                       
                       <button
-                        onClick={() => handleStatusUpdate('resolved')}
-                        disabled={isUpdatingStatus || issue.status === 'resolved'}
+                        onClick={() => handleStatusUpdate('Resolved')}
+                        disabled={isUpdatingStatus || issue.status === 'Resolved' || issue.status === 'resolved'}
                         className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                          issue.status === 'resolved' 
+                          issue.status === 'Resolved' || issue.status === 'resolved'
                             ? 'bg-green-600 text-white cursor-default shadow-lg' 
                             : 'bg-green-600/10 text-green-300 border border-green-600/30 hover:bg-green-600/20 hover:scale-105'
                         }`}
                       >
-                        {isUpdatingStatus && issue.status === 'resolved' ? 'Updating...' : 'Mark as Resolved'}
+                        {isUpdatingStatus && (issue.status === 'Resolved' || issue.status === 'resolved') ? 'Updating...' : 'Mark as Resolved'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleStatusUpdate('Closed')}
+                        disabled={isUpdatingStatus || issue.status === 'Closed' || issue.status === 'closed'}
+                        className={`w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                          issue.status === 'Closed' || issue.status === 'closed'
+                            ? 'bg-slate-600 text-white cursor-default shadow-lg' 
+                            : 'bg-slate-600/10 text-slate-300 border border-slate-600/30 hover:bg-slate-600/20 hover:scale-105'
+                        }`}
+                      >
+                        {isUpdatingStatus && (issue.status === 'Closed' || issue.status === 'closed') ? 'Updating...' : 'Mark as Closed'}
                       </button>
                     </div>
                   )}
