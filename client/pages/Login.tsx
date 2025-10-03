@@ -14,7 +14,7 @@ export default function Login() {
   
   // Redirect to new AuthPage for better UX
   useEffect(() => {
-    navigate("/auth");
+    navigate("/auth?mode=login");
   }, [navigate]);
 
   // Redirect based on user role if already authenticated

@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { authAPI } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Eye, EyeOff, ArrowRight, Users, MapPin, CheckCircle, Heart } from "lucide-react";
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,16 @@ export default function AuthPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   
   const { login, isAuthenticated, userInfo } = useAuth();
+
+  // Set initial form state based on query parameters
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'login') {
+      setIsLogin(true);
+    } else if (mode === 'register') {
+      setIsLogin(false);
+    }
+  }, [searchParams]);
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -40,8 +51,11 @@ export default function AuthPage() {
   };
 
   const toggleMode = () => {
-    setIsLogin(!isLogin);
+    const newMode = !isLogin;
+    setIsLogin(newMode);
     resetForm();
+    // Update URL to reflect the current mode
+    navigate(`/auth?mode=${newMode ? 'login' : 'register'}`, { replace: true });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

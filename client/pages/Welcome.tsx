@@ -77,13 +77,13 @@ export default function Welcome() {
             ) : (
               <>
                 <Link
-                  to="/auth"
+                  to="/auth?mode=login"
                   className="text-white hover:text-cs-blue-light transition-colors px-4 py-2"
                 >
                   Login
                 </Link>
                 <Link
-                  to="/auth"
+                  to="/auth?mode=register"
                   className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
                 >
                   Register
@@ -162,7 +162,7 @@ export default function Welcome() {
               ) : (
                 <>
                   <Link
-                    to="/auth"
+                    to="/auth?mode=register"
                     className="flex items-center space-x-2 bg-gradient-to-r from-cs-blue-primary to-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:from-cs-blue-secondary hover:to-cs-blue-primary transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cs-blue-primary/20"
                   >
                     <span>Start Reporting Issues</span>

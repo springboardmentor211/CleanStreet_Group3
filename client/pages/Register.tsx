@@ -14,7 +14,7 @@ export default function Register() {
 
   // Redirect to new AuthPage for better UX
   useEffect(() => {
-    navigate("/auth");
+    navigate("/auth?mode=register");
   }, [navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
