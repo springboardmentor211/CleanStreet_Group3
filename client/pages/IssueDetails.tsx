@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
-import { ThumbsUp, ThumbsDown, MessageCircle, MapPin, Clock, ArrowLeft, User, Calendar, Eye, Share2, Bookmark, Check, Copy, BookmarkCheck } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageCircle, MapPin, Clock, ArrowLeft, User, Calendar, Eye, Share2, Bookmark, Check, Copy, BookmarkCheck, Download } from "lucide-react";
 import { issuesAPI, adminAPI, bookmarksAPI } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function IssueDetails() {
   const { id } = useParams();
@@ -23,6 +25,7 @@ export default function IssueDetails() {
   const [showRipple, setShowRipple] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isBookmarking, setIsBookmarking] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const isAdmin = user?.role === 'admin';
 
@@ -259,6 +262,424 @@ export default function IssueDetails() {
     }
   };
 
+  const handleDownloadPDF = async () => {
+    if (!issue || isDownloading) return;
+    
+    setIsDownloading(true);
+    
+    try {
+      toast.info("Generating PDF...", {
+        description: "Please wait while we prepare your document with images.",
+        duration: 3000,
+      });
+
+      // Create a new PDF document
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - 2 * margin;
+      let yPosition = margin;
+      let currentPage = 1;
+      const maxPages = 2;
+
+      // Helper function to clean text for PDF (fix encoding issues)
+      const cleanText = (text: string) => {
+        return text
+          .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters
+          .replace(/'/g, "'")
+          .replace(/"/g, '"')
+          .replace(/"/g, '"')
+          .replace(/–/g, '-')
+          .replace(/—/g, '-')
+          .replace(/…/g, '...')
+          .trim();
+      };
+
+      // Helper function to check if we need a new page and update position
+      const checkNewPage = (requiredHeight: number) => {
+        if (yPosition + requiredHeight > pageHeight - 40 && currentPage < maxPages) {
+          pdf.addPage();
+          currentPage++;
+          yPosition = margin;
+          return true;
+        }
+        return false;
+      };
+
+      // Helper function to add section divider
+      const addSectionDivider = () => {
+        if (currentPage > maxPages) return;
+        
+        // Check space for divider
+        if (yPosition + 10 > pageHeight - 40 && currentPage < maxPages) {
+          pdf.addPage();
+          currentPage++;
+          yPosition = margin;
+        }
+        
+        // Add a subtle line divider
+        pdf.setDrawColor(200, 200, 200);
+        pdf.setLineWidth(0.5);
+        pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 8;
+      };
+
+      // Helper function to add section header with background
+      const addSectionHeader = (title: string) => {
+        if (currentPage > maxPages) return;
+        
+        // Check if header fits on current page
+        checkNewPage(15);
+        
+        // Add background rectangle for section header
+        pdf.setFillColor(245, 247, 250);
+        pdf.rect(margin - 5, yPosition - 2, contentWidth + 10, 12, 'F');
+        
+        // Add section title with clean text
+        const cleanTitle = cleanText(title);
+        pdf.setTextColor(59, 130, 246);
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(cleanTitle, margin, yPosition + 6);
+        
+        // Reset text color
+        pdf.setTextColor(0, 0, 0);
+        yPosition += 15;
+      };
+
+      // Helper function to add text with wrapping and page limit check
+      const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 12, isBold: boolean = false) => {
+        if (currentPage > maxPages) return y;
+        
+        // Clean the text to prevent encoding issues
+        const cleanedText = cleanText(text);
+        
+        pdf.setFontSize(fontSize);
+        pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+        const lines = pdf.splitTextToSize(cleanedText, maxWidth);
+        
+        const lineHeight = fontSize * 0.6;
+        let currentY = y;
+        
+        // Process lines and handle page breaks
+        for (let i = 0; i < lines.length; i++) {
+          // Check if current line fits on page
+          if (currentY + lineHeight > pageHeight - 40) {
+            if (currentPage < maxPages) {
+              pdf.addPage();
+              currentPage++;
+              currentY = margin;
+            } else {
+              // If we're on the last page and can't fit more, truncate
+              pdf.text('... (content truncated)', x, currentY - lineHeight);
+              return currentY;
+            }
+          }
+          
+          pdf.text(lines[i], x, currentY);
+          currentY += lineHeight;
+        }
+        
+        return currentY;
+      };
+
+      // Helper function to load and add image with better alignment
+      const addImageToPDF = async (imageSrc: string, x: number, y: number, maxWidth: number, maxHeight: number, imageIndex: number) => {
+        if (currentPage > maxPages) return y;
+        
+        return new Promise<number>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          img.onload = () => {
+            try {
+              // Calculate dimensions to fit within constraints with proper aspect ratio
+              const aspectRatio = img.width / img.height;
+              let imgWidth = Math.min(maxWidth - 4, img.width * 0.15); // Better scaling
+              let imgHeight = imgWidth / aspectRatio;
+              
+              if (imgHeight > maxHeight - 4) {
+                imgHeight = maxHeight - 4;
+                imgWidth = imgHeight * aspectRatio;
+              }
+              
+              // Center the image in its allocated space
+              const centeredX = x + (maxWidth - imgWidth) / 2;
+              const centeredY = y + 2; // Small top padding
+              
+              // Check if image fits on current page
+              if (centeredY + imgHeight > pageHeight - 40 && currentPage < maxPages) {
+                pdf.addPage();
+                currentPage++;
+                const newY = margin + 2;
+                return resolve(newY + imgHeight + 8);
+              }
+              
+              // Only add image if we're still within page limits
+              if (currentPage <= maxPages && centeredY + imgHeight <= pageHeight - 40) {
+                // Add image border/frame
+                pdf.setDrawColor(220, 220, 220);
+                pdf.setLineWidth(0.3);
+                pdf.rect(centeredX - 1, centeredY - 1, imgWidth + 2, imgHeight + 2);
+                
+                // Create canvas to convert image
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx?.drawImage(img, 0, 0);
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                pdf.addImage(imgData, 'JPEG', centeredX, centeredY, imgWidth, imgHeight);
+                
+                // Add image label
+                pdf.setFontSize(7);
+                pdf.setFont('helvetica', 'normal');
+                pdf.setTextColor(100, 100, 100);
+                const labelText = `Image ${imageIndex + 1}`;
+                const labelX = centeredX + (imgWidth / 2) - (pdf.getTextWidth(labelText) / 2);
+                pdf.text(labelText, labelX, centeredY + imgHeight + 8);
+                
+                // Reset text color
+                pdf.setTextColor(0, 0, 0);
+                
+                resolve(centeredY + imgHeight + 12);
+              } else {
+                resolve(y);
+              }
+            } catch (error) {
+              console.error('Error adding image:', error);
+              resolve(y);
+            }
+          };
+          
+          img.onerror = () => {
+            console.error('Failed to load image:', imageSrc);
+            // Add placeholder for failed image
+            if (currentPage <= maxPages) {
+              pdf.setDrawColor(200, 200, 200);
+              pdf.setFillColor(245, 245, 245);
+              pdf.rect(x + 2, y + 2, maxWidth - 4, maxHeight - 4, 'FD');
+              
+              pdf.setFontSize(8);
+              pdf.setTextColor(150, 150, 150);
+              pdf.text('Image unavailable', x + maxWidth/2 - 20, y + maxHeight/2);
+              pdf.setTextColor(0, 0, 0);
+            }
+            resolve(y + maxHeight + 8);
+          };
+          
+          img.src = imageSrc;
+        });
+      };
+
+      // Header
+      pdf.setFillColor(59, 130, 246); // Blue background
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CleanStreet Issue Report', pageWidth / 2, 25, { align: 'center' });
+      
+      yPosition = 60;
+
+      // Reset text color for content
+      pdf.setTextColor(0, 0, 0);
+
+      // Issue Title
+      yPosition = addWrappedText(`Issue: ${issue.title}`, margin, yPosition, contentWidth, 16, true);
+      yPosition += 5;
+
+      // Issue ID and Date
+      checkNewPage(15);
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Issue ID: ${cleanText(issue._id)}`, margin, yPosition);
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, yPosition);
+      yPosition += 10;
+
+      // Issue Details Section
+      checkNewPage(25);
+      addSectionDivider();
+      addSectionHeader('Issue Details');
+
+      // Status, Location, and Date (compact)
+      checkNewPage(25);
+      const statusText = issue.status === 'open' ? 'Open' : 
+                        issue.status === 'in-progress' ? 'In Progress' : 'Resolved';
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Status: ${statusText}`, margin, yPosition);
+      yPosition += 8;
+
+      if (issue.address) {
+        pdf.setFontSize(10);
+        pdf.text(`Location: ${cleanText(issue.address)}`, margin, yPosition);
+        yPosition += 8;
+      }
+
+      if (issue.createdAt) {
+        const reportedDate = new Date(issue.createdAt).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric'
+        });
+        pdf.setFontSize(10);
+        pdf.text(`Reported: ${reportedDate}`, margin, yPosition);
+        yPosition += 12;
+      }
+
+      // Description Section
+      checkNewPage(25);
+      addSectionDivider();
+      addSectionHeader('Description');
+      yPosition = addWrappedText(issue.description, margin, yPosition, contentWidth, 9);
+      yPosition += 5;
+
+      // Images Section (if any)
+      if (Array.isArray(issue.images) && issue.images.length > 0) {
+        checkNewPage(50); // Check if we need space for images section
+        addSectionDivider();
+        addSectionHeader(`Visual Evidence (${issue.images.length} images)`);
+
+        // Show all images across both pages
+        const imagesToShow = issue.images; // Show ALL images
+        const imagesPerRow = 2;
+        const imageWidth = contentWidth / imagesPerRow - 10;
+        const maxImageHeight = 35; // Slightly smaller to fit more
+        const imageSpacing = 20;
+        
+        let imagesProcessed = 0;
+        let currentRowY = yPosition;
+        
+        while (imagesProcessed < imagesToShow.length && currentPage <= maxPages) {
+          // Check if we need space for a new row of images
+          checkNewPage(maxImageHeight + 15);
+          
+          // Process up to 2 images per row
+          const imagesInThisRow = Math.min(imagesPerRow, imagesToShow.length - imagesProcessed);
+          
+          for (let j = 0; j < imagesInThisRow; j++) {
+            const imageIndex = imagesProcessed + j;
+            const imageX = margin + (j * (imageWidth + imageSpacing));
+            
+            try {
+              await addImageToPDF(imagesToShow[imageIndex], imageX, yPosition, imageWidth, maxImageHeight, imageIndex);
+            } catch (error) {
+              console.error('Error adding image:', error);
+            }
+          }
+          
+          // Move to next row
+          yPosition += maxImageHeight + 15;
+          imagesProcessed += imagesInThisRow;
+        }
+        
+        // Add summary of images shown
+        if (imagesProcessed < issue.images.length) {
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'italic');
+          pdf.text(`Showing ${imagesProcessed} of ${issue.images.length} images (remaining images couldn't fit in 2 pages)`, margin, yPosition);
+          yPosition += 10;
+        } else {
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(`All ${issue.images.length} images shown above`, margin, yPosition);
+          yPosition += 10;
+        }
+      }
+
+      // Community Engagement Section (compact)
+      checkNewPage(25);
+      addSectionDivider();
+      addSectionHeader('Community Engagement');
+      
+      const supportVotes = issue.upvotes || 0;
+      const disputeVotes = issue.downvotes || 0;
+      const totalVotes = supportVotes + disputeVotes;
+      const supportPercentage = totalVotes > 0 ? Math.round((supportVotes / totalVotes) * 100) : 0;
+
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Votes: ${supportVotes} support, ${disputeVotes} disputes (${supportPercentage}% support)`, margin, yPosition);
+      yPosition += 6;
+      pdf.text(`Comments: ${comments.length}`, margin, yPosition);
+      yPosition += 8;
+
+      // Comments Section (very compact)
+      if (comments.length > 0 && yPosition < pageHeight - 60) {
+        checkNewPage(25);
+        addSectionDivider();
+        addSectionHeader('Recent Comments');
+
+        const commentsToShow = comments.slice(0, 1); // Show only 1 comment to save space for images
+        for (let i = 0; i < commentsToShow.length; i++) {
+          const comment = commentsToShow[i];
+          if (currentPage > maxPages) break;
+
+          checkNewPage(15);
+          const commentDate = new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const userName = cleanText(comment.user?.fullName || 'Anonymous');
+          
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`${userName} (${commentDate}):`, margin, yPosition);
+          yPosition += 4;
+          
+          // Truncate long comments and clean text
+          const truncatedComment = comment.text.length > 50 ? 
+            cleanText(comment.text.substring(0, 50)) + '...' : cleanText(comment.text);
+          
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'normal');
+          const lines = pdf.splitTextToSize(truncatedComment, contentWidth);
+          pdf.text(lines, margin, yPosition);
+          yPosition += (lines.length * 4) + 6;
+        }
+        
+        if (comments.length > 1) {
+          pdf.setFontSize(7);
+          pdf.setFont('helvetica', 'italic');
+          pdf.text(`... and ${comments.length - 1} more comments`, margin, yPosition);
+          yPosition += 6;
+        }
+
+        if (comments.length > commentsToShow.length) {
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'italic');
+          pdf.text(`... and ${comments.length - commentsToShow.length} more comments`, margin, yPosition);
+        }
+      }
+
+      // Footer on last page
+      const footerY = pageHeight - 15;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(128, 128, 128);
+      pdf.text('Generated by CleanStreet - Community Issue Reporting System', pageWidth / 2, footerY, { align: 'center' });
+
+      // Save the PDF
+      const fileName = `CleanStreet_Issue_${issue.title.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      pdf.save(fileName);
+
+      toast.success("PDF downloaded successfully!", {
+        description: `Issue report with ${Array.isArray(issue.images) ? issue.images.length : 0} images saved to downloads.`,
+        duration: 3000,
+      });
+
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+      toast.error("Failed to generate PDF", {
+        description: "Please try again.",
+        duration: 3000,
+      });
+    } finally {
+      setTimeout(() => setIsDownloading(false), 1000);
+    }
+  };
+
   const handleComment = async () => {
     if (!comment.trim()) return;
     setCommentAnimating(true);
@@ -352,7 +773,7 @@ export default function IssueDetails() {
                       ) : (
                         <>
                           <Share2 className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                          <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">Share</span>
+                          <span className="text-sm font-medium opacity-100 group-hover:opacity-100 transition-opacity duration-200">Share</span>
                         </>
                       )}
                     </div>
@@ -365,6 +786,28 @@ export default function IssueDetails() {
                     </div>
                   </div>
                 </div>
+                
+                <button 
+                  onClick={handleDownloadPDF}
+                  disabled={isDownloading}
+                  className={`group px-4 py-2 backdrop-blur-sm border rounded-xl transition-all duration-300 ${
+                    isDownloading
+                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-400 animate-pulse'
+                      : 'bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10 hover:border-cs-blue-primary/50 hover:scale-105'
+                  }`}
+                  title={isDownloading ? "Generating PDF..." : "Download issue report as PDF"}
+                >
+                  <div className="flex items-center gap-2">
+                    {isDownloading ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
+                    )}
+                    <span className="text-sm font-medium opacity-100 group-hover:opacity-100 transition-opacity duration-200">
+                      {isDownloading ? 'Generating...' : 'Download'}
+                    </span>
+                  </div>
+                </button>
                 
                 <button 
                   onClick={handleBookmark}
@@ -384,7 +827,7 @@ export default function IssueDetails() {
                     ) : (
                       <Bookmark className="h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
                     )}
-                    <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <span className="text-sm font-medium opacity-100 group-hover:opacity-100 transition-opacity duration-200">
                       {isBookmarked ? 'Saved' : 'Save'}
                     </span>
                   </div>
@@ -499,7 +942,7 @@ export default function IssueDetails() {
                         </div>
                         
                         {/* Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
                           <div className="p-4 text-white">
                             <p className="text-sm font-medium">Click to view full size</p>
                           </div>
