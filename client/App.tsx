@@ -24,6 +24,7 @@ import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
 import Maps from "./pages/Maps";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminUserProfilePage from "./pages/AdminUserProfilePage";
 import Bookmarks from "./pages/Bookmarks";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/maps" element={<ProtectedRoute><Maps /></ProtectedRoute>} />
             <Route path="/bookmarks" element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/userprofile/:userId" element={<ProtectedRoute adminOnly><AdminUserProfilePage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       </BrowserRouter>

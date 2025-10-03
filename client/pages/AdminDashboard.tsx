@@ -907,6 +907,16 @@ const AdminDashboard = () => {
                           )}
                         </div>
                         <div className="flex flex-col gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5] flex items-center gap-1"
+                            onClick={() => navigate(`/admin/userprofile/${user._id}`)}
+                          >
+                            <Eye className="h-3 w-3" />
+                            View Profile
+                          </Button>
+                          
                           {user.isBlocked ? (
                             <Button
                               size="sm"
@@ -1003,6 +1013,16 @@ const AdminDashboard = () => {
                           <div className="flex flex-col gap-2">
                             <Button
                               size="sm"
+                              variant="outline"
+                              className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5] flex items-center gap-1"
+                              onClick={() => navigate(`/admin/userprofile/${user._id}`)}
+                            >
+                              <Eye className="h-3 w-3" />
+                              View Profile
+                            </Button>
+                            
+                            <Button
+                              size="sm"
                               className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
                               onClick={() => handleBlockUser(user, false)}
                               disabled={blockingUserId === user._id}
@@ -1026,7 +1046,7 @@ const AdminDashboard = () => {
 
           <TabsContent value="analytics" id="analytics-content">
             {/* Analytics Download Controls */}
-            <div className={`mb-6 p-4 bg-[#111827] rounded-lg border border-white/30 transition-all duration-600 ease-out ${
+            <div className={`mb-6 p-4 bg-[#111827] rounded-lg border border-white/30 transition-all duration-1000 ease-out ${
               activeTab === 'analytics' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
               <div className="flex flex-wrap gap-3 items-center justify-between">
@@ -1071,9 +1091,9 @@ const AdminDashboard = () => {
               </div>
             </div>
             
-            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-all duration-800 ease-out ${
+            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-all duration-1200 ease-out ${
               activeTab === 'analytics' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`} style={{ transitionDelay: '200ms' }}>
+            }`} style={{ transitionDelay: '400ms' }}>
               {/* Issues by Category - Bar Chart */}
               <Card className="bg-background border-white/30">
                 <CardHeader>
@@ -1119,11 +1139,11 @@ const AdminDashboard = () => {
                           <div className="flex justify-between items-center">
                             <span className="font-medium text-white">{item._id}</span>
                             <span 
-                              className={`text-sm text-white/60 transition-all duration-700 ease-out ${
+                              className={`text-sm text-white/60 transition-all duration-1200 ease-out ${
                                 animateCharts ? 'opacity-100' : 'opacity-0'
                               }`}
                               style={{ 
-                                transitionDelay: `${index * 200 + 800}ms`
+                                transitionDelay: `${index * 300 + 1200}ms`
                               }}
                             >
                               {animateCharts ? item.count : 0}
@@ -1131,10 +1151,10 @@ const AdminDashboard = () => {
                           </div>
                           <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
                             <div 
-                              className="h-full bg-gradient-to-r from-[#2759C5] to-[#3576E0] rounded-full transition-all duration-1200 ease-out"
+                              className="h-full bg-gradient-to-r from-[#2759C5] to-[#3576E0] rounded-full transition-all duration-2000 ease-out"
                               style={{ 
                                 width: animateCharts ? `${percentage}%` : '0%',
-                                transitionDelay: `${index * 200}ms`
+                                transitionDelay: `${index * 300}ms`
                               }}
                             />
                           </div>
@@ -1215,9 +1235,9 @@ const AdminDashboard = () => {
                                   fill="transparent"
                                   strokeDasharray={strokeDasharray}
                                   strokeDashoffset={strokeDashoffset}
-                                  className="transition-all duration-1500 ease-out"
+                                  className="transition-all duration-2500 ease-out"
                                   style={{ 
-                                    transitionDelay: `${index * 300}ms`
+                                    transitionDelay: `${index * 400}ms`
                                   }}
                                 />
                               );
@@ -1228,16 +1248,16 @@ const AdminDashboard = () => {
                         {/* Center Total */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
-                            <div className={`text-2xl font-bold text-white transition-all duration-1000 ease-out ${
+                            <div className={`text-2xl font-bold text-white transition-all duration-1800 ease-out ${
                               animateCharts ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
                             }`}
-                            style={{ transitionDelay: '600ms' }}>
+                            style={{ transitionDelay: '800ms' }}>
                               {stats.issuesByStatus.reduce((sum, item) => sum + item.count, 0)}
                             </div>
-                            <div className={`text-sm text-white/60 transition-all duration-800 ease-out ${
+                            <div className={`text-sm text-white/60 transition-all duration-1200 ease-out ${
                               animateCharts ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                             }`}
-                            style={{ transitionDelay: '800ms' }}>
+                            style={{ transitionDelay: '1000ms' }}>
                               Total Issues
                             </div>
                           </div>
@@ -1258,15 +1278,15 @@ const AdminDashboard = () => {
                       return (
                         <div 
                           key={item._id} 
-                          className={`flex items-center gap-2 transition-all duration-800 ease-out ${
+                          className={`flex items-center gap-2 transition-all duration-1400 ease-out ${
                             animateCharts ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                           }`}
-                          style={{ transitionDelay: `${1200 + index * 150}ms` }}
+                          style={{ transitionDelay: `${1500 + index * 200}ms` }}
                         >
-                          <div className={`w-3 h-3 rounded-full transition-all duration-500 ${colors[item._id] || 'bg-blue-500'} ${
+                          <div className={`w-3 h-3 rounded-full transition-all duration-800 ${colors[item._id] || 'bg-blue-500'} ${
                             animateCharts ? 'scale-100' : 'scale-0'
                           }`} 
-                          style={{ transitionDelay: `${1000 + index * 150}ms` }} />
+                          style={{ transitionDelay: `${1300 + index * 200}ms` }} />
                           <span className="text-sm text-white capitalize">{item._id}</span>
                           <span className="text-sm text-white/60 ml-auto">{item.count}</span>
                         </div>
@@ -1319,24 +1339,24 @@ const AdminDashboard = () => {
                                   <div key={`${trend.year}-${trend.monthNumber}`} className="flex flex-col items-center gap-2">
                                     <div className="flex items-end h-48">
                                       <div
-                                        className="bg-gradient-to-t from-[#2759C5] to-[#ACCFFF] rounded-t-lg w-12 transition-all duration-1200 ease-out hover:from-[#3576E0] hover:to-[#2759C5] cursor-pointer relative group"
+                                        className="bg-gradient-to-t from-[#2759C5] to-[#ACCFFF] rounded-t-lg w-12 transition-all duration-2000 ease-out hover:from-[#3576E0] hover:to-[#2759C5] cursor-pointer relative group"
                                         style={{ 
                                           height: `${animatedHeight}px`,
-                                          transitionDelay: `${index * 150}ms`
+                                          transitionDelay: `${index * 250}ms`
                                         }}
                                       >
-                                        <div className={`absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-2 py-1 rounded text-xs transition-opacity duration-500 whitespace-nowrap ${
+                                        <div className={`absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-2 py-1 rounded text-xs transition-opacity duration-800 whitespace-nowrap ${
                                           animateCharts ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
                                         }`}
-                                        style={{ transitionDelay: `${index * 150 + 800}ms` }}>
+                                        style={{ transitionDelay: `${index * 250 + 1200}ms` }}>
                                           {trend.count} issues
                                         </div>
                                       </div>
                                     </div>
-                                    <span className={`text-sm text-white/60 transition-all duration-600 ease-out ${
+                                    <span className={`text-sm text-white/60 transition-all duration-1000 ease-out ${
                                       animateCharts ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                                     }`}
-                                    style={{ transitionDelay: `${index * 150 + 400}ms` }}>
+                                    style={{ transitionDelay: `${index * 250 + 600}ms` }}>
                                       {trend.month}
                                     </span>
                                   </div>
@@ -1346,10 +1366,10 @@ const AdminDashboard = () => {
                           );
                         })()}
                         <div className="text-center">
-                          <p className={`text-sm text-white/60 transition-all duration-800 ease-out ${
+                          <p className={`text-sm text-white/60 transition-all duration-1200 ease-out ${
                             animateCharts ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                           }`}
-                          style={{ transitionDelay: '1000ms' }}>
+                          style={{ transitionDelay: '1500ms' }}>
                             Issues reported per month (Last 6 months)
                           </p>
                         </div>
@@ -1408,24 +1428,24 @@ const AdminDashboard = () => {
                         const percentage = (priority.count / maxCount) * 100;
                         return (
                           <div key={priority.name} className="space-y-2">
-                            <div className={`flex justify-between items-center transition-all duration-600 ease-out ${
+                            <div className={`flex justify-between items-center transition-all duration-1000 ease-out ${
                               animateCharts ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                             }`}
-                            style={{ transitionDelay: `${index * 200}ms` }}>
+                            style={{ transitionDelay: `${index * 300}ms` }}>
                               <span className="font-medium text-white">{priority.name}</span>
-                              <span className={`text-sm text-white/60 transition-all duration-500 ease-out ${
+                              <span className={`text-sm text-white/60 transition-all duration-800 ease-out ${
                                 animateCharts ? 'opacity-100' : 'opacity-0'
                               }`}
-                              style={{ transitionDelay: `${index * 200 + 600}ms` }}>
+                              style={{ transitionDelay: `${index * 300 + 800}ms` }}>
                                 {priority.count}
                               </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
                               <div 
-                                className={`h-full bg-gradient-to-r ${priority.color} rounded-full transition-all duration-1200 ease-out`}
+                                className={`h-full bg-gradient-to-r ${priority.color} rounded-full transition-all duration-2000 ease-out`}
                                 style={{ 
                                   width: animateCharts ? `${percentage}%` : '0%',
-                                  transitionDelay: `${index * 200 + 200}ms`
+                                  transitionDelay: `${index * 300 + 400}ms`
                                 }}
                               />
                             </div>
@@ -1473,35 +1493,35 @@ const AdminDashboard = () => {
                   <div className="space-y-6">
                     {/* Average Resolution Time */}
                     <div className="text-center">
-                      <div className={`text-3xl font-bold text-[#2759C5] mb-2 transition-all duration-1000 ease-out ${
+                      <div className={`text-3xl font-bold text-[#2759C5] mb-2 transition-all duration-1800 ease-out ${
                         animateCharts ? 'scale-100 opacity-100 rotate-0' : 'scale-75 opacity-0 rotate-12'
                       }`}
-                      style={{ transitionDelay: '300ms' }}>
+                      style={{ transitionDelay: '500ms' }}>
                         2.3
                       </div>
-                      <div className={`text-sm text-white/60 transition-all duration-800 ease-out ${
+                      <div className={`text-sm text-white/60 transition-all duration-1200 ease-out ${
                         animateCharts ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                       }`}
-                      style={{ transitionDelay: '600ms' }}>
+                      style={{ transitionDelay: '900ms' }}>
                         Average Days to Resolve
                       </div>
                     </div>
                     
                     {/* Resolution Rate Progress */}
                     <div className="space-y-2">
-                      <div className={`flex justify-between transition-all duration-600 ease-out ${
+                      <div className={`flex justify-between transition-all duration-1000 ease-out ${
                         animateCharts ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                       }`}
-                      style={{ transitionDelay: '800ms' }}>
+                      style={{ transitionDelay: '1200ms' }}>
                         <span className="text-sm text-white">Resolution Rate</span>
                         <span className="text-sm text-white/60">78%</span>
                       </div>
                       <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full transition-all duration-1500 ease-out"
+                          className="h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full transition-all duration-2500 ease-out"
                           style={{ 
                             width: animateCharts ? '78%' : '0%',
-                            transitionDelay: '1000ms'
+                            transitionDelay: '1500ms'
                           }}
                         />
                       </div>
@@ -1509,26 +1529,26 @@ const AdminDashboard = () => {
 
                     {/* Quick Stats */}
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
-                      <div className={`text-center transition-all duration-700 ease-out ${
+                      <div className={`text-center transition-all duration-1200 ease-out ${
                         animateCharts ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                       }`}
-                      style={{ transitionDelay: '1300ms' }}>
-                        <div className={`text-xl font-semibold text-white transition-all duration-500 ease-out ${
+                      style={{ transitionDelay: '1800ms' }}>
+                        <div className={`text-xl font-semibold text-white transition-all duration-800 ease-out ${
                           animateCharts ? 'scale-100' : 'scale-0'
                         }`}
-                        style={{ transitionDelay: '1500ms' }}>
+                        style={{ transitionDelay: '2200ms' }}>
                           24h
                         </div>
                         <div className="text-xs text-white/60">Fastest Resolution</div>
                       </div>
-                      <div className={`text-center transition-all duration-700 ease-out ${
+                      <div className={`text-center transition-all duration-1200 ease-out ${
                         animateCharts ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                       }`}
-                      style={{ transitionDelay: '1400ms' }}>
-                        <div className={`text-xl font-semibold text-white transition-all duration-500 ease-out ${
+                      style={{ transitionDelay: '1900ms' }}>
+                        <div className={`text-xl font-semibold text-white transition-all duration-800 ease-out ${
                           animateCharts ? 'scale-100' : 'scale-0'
                         }`}
-                        style={{ transitionDelay: '1600ms' }}>
+                        style={{ transitionDelay: '2300ms' }}>
                           12
                         </div>
                         <div className="text-xs text-white/60">Resolved This Week</div>

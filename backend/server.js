@@ -10,8 +10,12 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const issueRoutes = require('./routes/issues');
 const adminRoutes = require('./routes/admin');
+const adminUserProfileRoutes = require('./routes/adminUserProfile');
 const uploadRoutes = require('./routes/upload');
 const bookmarkRoutes = require('./routes/bookmarks');
+
+// Import middleware
+const { logActivity } = require('./middleware/activityLogger');
 
 const app = express();
 
@@ -67,10 +71,14 @@ app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Activity logging middleware (apply globally)
+app.use(logActivity());
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/issues', issueRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/users', adminUserProfileRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 
@@ -96,6 +104,82 @@ app.get('/api/test-issues', async (req, res) => {
     });
   } catch (error) {
     console.error('Test issues error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Test activity logging endpoint
+app.post('/api/test-activity-logs', async (req, res) => {
+  try {
+    const UserActivityLog = require('./models/UserActivityLog');
+    const User = require('./models/User');
+    
+    // Find any user to create test logs
+    const testUser = await User.findOne();
+    if (!testUser) {
+      return res.status(400).json({ message: 'No users found for testing' });
+    }
+
+    // Create some test activity logs
+    const testActivities = [
+      {
+        userId: testUser._id,
+        action: 'login',
+        details: { method: 'POST', path: '/api/auth/login' },
+        metadata: { ipAddress: '127.0.0.1', browser: 'test-browser' },
+        severity: 'high',
+        isSuccessful: true,
+        timestamp: new Date()
+      },
+      {
+        userId: testUser._id,
+        action: 'issue_create',
+        details: { issueTitle: 'Test Issue', issueCategory: 'Pothole' },
+        metadata: { ipAddress: '127.0.0.1', browser: 'test-browser' },
+        targetResource: {
+          resourceType: 'issue',
+          resourceId: '507f1f77bcf86cd799439011',
+          resourceTitle: 'Test Issue'
+        },
+        severity: 'medium',
+        isSuccessful: true,
+        timestamp: new Date(Date.now() - 60000) // 1 minute ago
+      },
+      {
+        userId: testUser._id,
+        action: 'issue_view',
+        details: { method: 'GET', path: '/api/issues/507f1f77bcf86cd799439011' },
+        metadata: { ipAddress: '127.0.0.1', browser: 'test-browser' },
+        targetResource: {
+          resourceType: 'issue',
+          resourceId: '507f1f77bcf86cd799439011',
+          resourceTitle: 'Test Issue'
+        },
+        severity: 'low',
+        isSuccessful: true,
+        timestamp: new Date(Date.now() - 30000) // 30 seconds ago
+      }
+    ];
+
+    const createdLogs = await UserActivityLog.insertMany(testActivities);
+    
+    // Test the getUserActivities method
+    const userActivities = await UserActivityLog.getUserActivities(testUser._id, { limit: 10 });
+    
+    res.json({
+      success: true,
+      message: 'Test activity logs created',
+      testUser: { id: testUser._id, username: testUser.username },
+      createdCount: createdLogs.length,
+      retrievedActivities: userActivities.length,
+      sampleActivities: userActivities.slice(0, 3)
+    });
+  } catch (error) {
+    console.error('Test activity logs error:', error);
     res.status(500).json({
       success: false,
       error: error.message,

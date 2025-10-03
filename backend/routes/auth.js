@@ -505,8 +505,47 @@ router.post('/upload-profile-image', [auth, upload.single('profileImage')], asyn
   }
 });
 
+// @route   POST api/auth/test-activity-log
+// @desc    Test activity logging for authenticated users
+// @access  Private
+router.post('/test-activity-log', auth, async (req, res) => {
+  try {
+    const { ActivityLogger } = require('../middleware/activityLogger');
+    const { action = 'test_action', details = {} } = req.body;
+    
+    // Manually log an activity
+    const logEntry = await ActivityLogger.log(
+      req.user._id || req.user.id, 
+      action, 
+      details, 
+      { 
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        manualTest: true
+      }
+    );
 
-
-
+    res.json({
+      success: true,
+      message: 'Activity logged successfully',
+      logEntry: logEntry ? {
+        id: logEntry._id,
+        action: logEntry.action,
+        timestamp: logEntry.timestamp
+      } : null,
+      user: {
+        id: req.user._id || req.user.id,
+        username: req.user.username
+      }
+    });
+  } catch (error) {
+    console.error('Test activity log error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error',
+      error: error.message 
+    });
+  }
+});
 
 module.exports = router;

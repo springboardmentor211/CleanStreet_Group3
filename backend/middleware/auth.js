@@ -125,4 +125,11 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { auth, adminAuth };
+// Export with both naming conventions for compatibility
+const authenticateToken = auth;
+
+module.exports = { 
+  auth, 
+  adminAuth, 
+  authenticateToken 
+};

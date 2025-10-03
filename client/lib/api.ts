@@ -404,6 +404,37 @@ export const adminAPI = {
   getBlockedUsers: async () => {
     return apiRequest('/admin/users/blocked');
   },
+
+  // Admin User Profile APIs
+  getUserProfile: async (userId: string, timeframe?: string) => {
+    const query = timeframe ? `?timeframe=${timeframe}` : '';
+    return apiRequest(`/admin/users/${userId}/profile${query}`);
+  },
+
+  getUserActivityLogs: async (userId: string, params?: {
+    page?: number;
+    limit?: number;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+    resourceType?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.action) query.append('action', params.action);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    if (params?.resourceType) query.append('resourceType', params.resourceType);
+
+    const queryString = query.toString();
+    return apiRequest(`/admin/users/${userId}/activities${queryString ? `?${queryString}` : ''}`);
+  },
+
+  exportUserData: async (userId: string, format: 'json' | 'csv' = 'json') => {
+    const query = `?format=${format}`;
+    return apiRequest(`/admin/users/${userId}/export${query}`);
+  },
 };
 
 // Bookmarks API
