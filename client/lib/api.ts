@@ -406,6 +406,37 @@ export const adminAPI = {
   },
 };
 
+// Bookmarks API
+export const bookmarksAPI = {
+  toggleBookmark: async (issueId: string) => {
+    return apiRequest(`/bookmarks/${issueId}/toggle`, {
+      method: 'POST',
+    });
+  },
+
+  getBookmarkStatus: async (issueId: string) => {
+    return apiRequest(`/bookmarks/${issueId}/status`);
+  },
+
+  getUserBookmarks: async (params?: {
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+
+    const queryString = query.toString();
+    return apiRequest(`/bookmarks${queryString ? `?${queryString}` : ''}`);
+  },
+
+  removeBookmark: async (issueId: string) => {
+    return apiRequest(`/bookmarks/${issueId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Health check
 export const healthAPI = {
   check: async () => {

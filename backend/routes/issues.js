@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 100,
       status,
       category,
       sortBy = 'createdAt',
@@ -43,9 +43,18 @@ router.get('/', async (req, res) => {
         const token = authHeader.substring(7);
         const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-        userId = decoded.user?.id || decoded.user?._id || decoded.id || decoded._id;
+        
+        // Handle different token structures safely
+        if (decoded.user && (decoded.user.id || decoded.user._id)) {
+          userId = decoded.user.id || decoded.user._id;
+        } else if (decoded.id || decoded._id) {
+          userId = decoded.id || decoded._id;
+        } else if (decoded.userId) {
+          userId = decoded.userId;
+        }
       } catch (err) {
         // Token invalid or expired, continue without user vote info
+        console.log('Token parsing error in GET /issues:', err.message);
       }
     }
 
@@ -54,8 +63,10 @@ router.get('/', async (req, res) => {
       const issueObj = issue.toObject();
       
       if (userId) {
-        const existingVote = issue.voters.find(vote => 
-          vote.user && vote.user.toString() === userId.toString()
+        // Filter out votes with null users first, then find the matching vote
+        const validVotes = issue.voters.filter(vote => vote && vote.user);
+        const existingVote = validVotes.find(vote => 
+          vote.user.toString() === userId.toString()
         );
         issueObj.userVote = existingVote ? existingVote.voteType : null;
       } else {
@@ -74,8 +85,13 @@ router.get('/', async (req, res) => {
       total
     });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
+    console.error('GET /issues error:', error.message);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message,
+      details: 'Error in GET /issues route'
+    });
   }
 });
 
@@ -99,16 +115,28 @@ router.get('/:id', async (req, res) => {
         const token = authHeader.substring(7);
         const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-        const userId = decoded.user?.id || decoded.user?._id || decoded.id || decoded._id;
+        
+        // Handle different token structures safely
+        let userId = null;
+        if (decoded.user && (decoded.user.id || decoded.user._id)) {
+          userId = decoded.user.id || decoded.user._id;
+        } else if (decoded.id || decoded._id) {
+          userId = decoded.id || decoded._id;
+        } else if (decoded.userId) {
+          userId = decoded.userId;
+        }
         
         if (userId) {
-          const existingVote = issue.voters.find(vote => 
-            vote.user && vote.user.toString() === userId.toString()
+          // Filter out votes with null users first, then find the matching vote
+          const validVotes = issue.voters.filter(vote => vote && vote.user);
+          const existingVote = validVotes.find(vote => 
+            vote.user.toString() === userId.toString()
           );
           userVote = existingVote ? existingVote.voteType : null;
         }
       } catch (err) {
         // Token invalid or expired, continue without user vote info
+        console.log('Token parsing error in GET /issues/:id:', err.message);
       }
     }
 
@@ -268,9 +296,9 @@ router.post('/:id/vote', auth, async (req, res) => {
       return res.status(400).json({ message: 'Invalid vote type' });
     }
 
-    // Find existing vote by this user
+    // Find existing vote by this user (filter out null votes first)
     const existingVoteIndex = issue.voters.findIndex(vote => 
-      vote.user && vote.user.toString() === userId.toString()
+      vote && vote.user && vote.user.toString() === userId.toString()
     );
 
     if (existingVoteIndex !== -1) {
@@ -314,9 +342,10 @@ router.post('/:id/vote', auth, async (req, res) => {
 
     await issue.save();
 
-    // Get user's current vote status
-    const currentUserVote = issue.voters.find(vote => 
-      vote.user && vote.user.toString() === userId.toString()
+    // Get user's current vote status (filter out null votes first)
+    const validVotes = issue.voters.filter(vote => vote && vote.user);
+    const currentUserVote = validVotes.find(vote => 
+      vote.user.toString() === userId.toString()
     );
 
     res.json({ 
@@ -396,17 +425,42 @@ router.get('/user/:userId', async (req, res) => {
 router.get('/stats/dashboard', async (req, res) => {
   try {
     const totalIssues = await Issue.countDocuments({ isDeleted: { $ne: true } });
-    // Try different status values to match what's in the database
+    
+    // Handle both old and new status values for backward compatibility
     const openIssues = await Issue.countDocuments({ 
-      $or: [{ status: 'open' }, { status: 'Open' }, { status: 'received' }, { status: 'Received' }], 
+      $or: [
+        // New status values
+        { status: 'Received' }, 
+        { status: 'Open' }, 
+        { status: 'Pending' },
+        // Old status values (for existing data)
+        { status: 'open' },
+        { status: 'pending' }
+      ], 
       isDeleted: { $ne: true } 
     });
+    
     const inProgressIssues = await Issue.countDocuments({ 
-      $or: [{ status: 'in-progress' }, { status: 'In Progress' }, { status: 'inProgress' }], 
+      $or: [
+        // New status values
+        { status: 'In Progress' }, 
+        { status: 'Assigned' }, 
+        { status: 'Under Review' },
+        // Old status values (for existing data)
+        { status: 'in-progress' },
+        { status: 'assigned' },
+        { status: 'under-review' }
+      ], 
       isDeleted: { $ne: true } 
     });
+    
     const resolvedIssues = await Issue.countDocuments({ 
-      $or: [{ status: 'resolved' }, { status: 'Resolved' }], 
+      $or: [
+        // New status value
+        { status: 'Resolved' },
+        // Old status value (for existing data)
+        { status: 'resolved' }
+      ], 
       isDeleted: { $ne: true } 
     });
 
@@ -414,13 +468,20 @@ router.get('/stats/dashboard', async (req, res) => {
     const recentActivity = await Issue.find({
       isDeleted: { $ne: true },
       $or: [
-        { status: { $in: ['resolved', 'Resolved'] } },
+        { status: { $in: ['resolved', 'Resolved', 'closed', 'Closed'] } },
         { updatedAt: { $gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } }
       ]
     })
     .sort({ updatedAt: -1 })
     .limit(10)
     .populate('reportedBy', 'username fullName');
+
+    console.log('Dashboard Stats:', {
+      total: totalIssues,
+      open: openIssues,
+      inProgress: inProgressIssues,
+      resolved: resolvedIssues
+    });
 
     res.json({
       total: totalIssues,
@@ -430,8 +491,12 @@ router.get('/stats/dashboard', async (req, res) => {
       recentActivity
     });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
+    console.error('Dashboard stats error:', error.message);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 });
 

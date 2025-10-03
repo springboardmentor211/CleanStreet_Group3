@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,16 @@ const ReportIssue = () => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      uploadedFiles.forEach(file => {
+        const url = URL.createObjectURL(file);
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [uploadedFiles]);
+
   const onSubmit = async (data: FormData) => {
     try {
       // console.log("Form data before submit:", data);
@@ -173,7 +183,7 @@ const ReportIssue = () => {
 
   return (
     <Layout>
-    <div className=" bg-[#111827] p-4 md:p-10 max-w-4xl mx-auto w-full rounded-2xl shadow-lg border border-white/10 mb-10">
+    <div className=" bg-[#111827] p-4 md:p-10 max-w-[80%] mx-auto w-full rounded-2xl shadow-lg border border-white/10 mb-10">
         <div className="mb-12 text-center rounded">
           <h1 className="text-3xl  font-bold text-foreground mb-2">
             Report a Civic Issue
@@ -186,24 +196,29 @@ const ReportIssue = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-civic-blue" />
-                  Issue Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Title */}
+            {/* Main Grid Layout */}
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+              {/* Left Column - Issue Details (spans 2 columns) */}
+              <div className="xl:col-span-2 space-y-8">
+                <Card className="transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10 border-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <AlertTriangle className="h-6 w-6 text-civic-blue" />
+                      Issue Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                {/* First Row - Title spans full width */}
+                <div className="grid grid-cols-1 gap-6">
                   <FormField
                     control={form.control}
                     name="issueTitle"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Issue Title</FormLabel>
+                        <FormLabel className="text-lg font-semibold">Issue Title</FormLabel>
                         <FormControl>
                           <Input
+                            className="border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white h-12 text-lg placeholder:text-gray-400"
                             placeholder="Brief description of the issue"
                             {...field}
                           />
@@ -212,8 +227,10 @@ const ReportIssue = () => {
                       </FormItem>
                     )}
                   />
+                </div>
 
-                  {/* Category */}
+                {/* Second Row - Category, Priority, and Address in 3 columns */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="category"
@@ -226,7 +243,7 @@ const ReportIssue = () => {
                           defaultValue={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="border-2 border-gray-600 focus:border-blue-400 focus:ring-blue-500/20 bg-gray-800 text-white h-12">
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                           </FormControl>
@@ -246,7 +263,6 @@ const ReportIssue = () => {
                     )}
                   />
 
-                  {/* Priority */}
                   <FormField
                     control={form.control}
                     name="priorityLevel"
@@ -259,7 +275,7 @@ const ReportIssue = () => {
                           defaultValue={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="border-2 border-gray-600 focus:border-blue-400 focus:ring-blue-500/20 bg-gray-800 text-white h-12">
                               <SelectValue placeholder="Select priority" />
                             </SelectTrigger>
                           </FormControl>
@@ -276,7 +292,32 @@ const ReportIssue = () => {
                     )}
                   />
 
-                  {/* Address */}
+                  <FormField
+                    control={form.control}
+                    name="nearbyLandmark"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Nearby Landmark{" "}
+                          <span className="text-muted-foreground">
+                            (Optional)
+                          </span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            className="border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white h-12 placeholder:text-gray-400 xl:col-span-2"
+                            placeholder="e.g. Near City Hall" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Third Row - Address spans full width */}
+                <div className="grid grid-cols-1 gap-6">
                   <FormField
                     control={form.control}
                     name="address"
@@ -285,6 +326,7 @@ const ReportIssue = () => {
                         <FormLabel>Address</FormLabel>
                         <FormControl>
                           <Input
+                            className="border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white h-12 placeholder:text-gray-400"
                             placeholder="Enter street address or search location"
                             {...field}
                           />
@@ -298,135 +340,142 @@ const ReportIssue = () => {
                   />
                 </div>
 
-                {/* Landmark */}
-                <FormField
-                  control={form.control}
-                  name="nearbyLandmark"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Nearby Landmark{" "}
-                        <span className="text-muted-foreground">
-                          (Optional)
-                        </span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Near City Hall" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Fourth Row - Description spans full width */}
+                <div className="grid grid-cols-1 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Describe the issue in detail..."
+                            className="min-h-[120px] border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white resize-none placeholder:text-gray-400"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                  </CardContent>
+                </Card>
 
-                {/* Description */}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe the issue in detail..."
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Upload Photos */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Camera className="h-5 w-5 text-civic-blue" />
-                  Photos (Optional)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center w-full">
-                    <Label
-                      htmlFor="photo-upload"
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                        <p className="mb-2 text-sm text-muted-foreground">
-                          <span className="font-semibold">Click to upload</span>{" "}
-                          photos of the issue
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG, GIF up to 10MB
+              {/* Right Column - Location and Actions */}
+              <div className="xl:col-span-2 space-y-8">
+                <Card className="transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10 border-2">
+                  <CardHeader>
+                    <CardTitle className="text-xl">Location on Map</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <MiniMap 
+                      onLocationSelect={handleLocationSelect} 
+                      searchAddress={form.watch("address")}
+                    />
+                    {selectedLocation && (
+                      <div className="mt-4 p-3 bg-gray-700 border border-blue-500 rounded-lg">
+                        <p className="text-sm font-medium text-blue-300">Selected Location:</p>
+                        <p className="text-xs text-blue-200">
+                          Lat: {selectedLocation.lat.toFixed(6)}, Lng: {selectedLocation.lng.toFixed(6)}
                         </p>
                       </div>
-                      <Input
-                        key={fileInputKey}
-                        id="photo-upload"
-                        type="file"
-                        className="hidden"
-                        multiple
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        aria-label="Upload photos"
-                      />
-                    </Label>
-                  </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                  {uploadedFiles.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="relative group">
-                          <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                            <Camera className="h-8 w-8 text-muted-foreground" />
+                {/* Upload Photos */}
+                <Card className="transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10 border-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Camera className="h-6 w-6 text-civic-blue" />
+                      Photos (Optional)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-center w-full">
+                        <Label
+                          htmlFor="photo-upload"
+                          className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-500 hover:border-blue-400 rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all duration-200 bg-gray-800/50"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-10 h-10 mb-4 text-muted-foreground" />
+                            <p className="mb-2 text-base text-muted-foreground">
+                              <span className="font-semibold">Click to upload</span>{" "}
+                              photos of the issue
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              PNG, JPG, GIF up to 10MB
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1 truncate">
-                            {file.name}
-                          </p>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removeFile(index)}
-                          >
-                            ×
-                          </Button>
+                          <Input
+                            key={fileInputKey}
+                            id="photo-upload"
+                            type="file"
+                            className="hidden"
+                            multiple
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            aria-label="Upload photos"
+                          />
+                        </Label>
+                      </div>
+
+                      {uploadedFiles.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {uploadedFiles.map((file, index) => (
+                            <div key={index} className="relative group">
+                              <div className="aspect-square bg-gray-700 rounded-lg overflow-hidden border-2 border-gray-600 hover:border-blue-400 transition-colors">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                  onLoad={(e) => {
+                                    // Revoke the URL after the image loads to free memory
+                                    const img = e.target as HTMLImageElement;
+                                    const cleanup = () => {
+                                      URL.revokeObjectURL(img.src);
+                                      img.removeEventListener('load', cleanup);
+                                    };
+                                    // Set a delay to ensure the image is fully rendered
+                                    setTimeout(cleanup, 1000);
+                                  }}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-300 mt-2 truncate text-center">
+                                {file.name}
+                              </p>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute -top-2 -right-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-red-600 hover:bg-red-700 border-2 border-white shadow-lg"
+                                onClick={() => removeFile(index)}
+                                title="Remove image"
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+                
+              </div>
+            </div>
 
-            {/* Location */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Location on Map</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MiniMap 
-                  onLocationSelect={handleLocationSelect} 
-                  searchAddress={form.watch("address")}
-                />
-                {selectedLocation && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Selected: Lat {selectedLocation.lat}, Lng {selectedLocation.lng}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-4">
+            {/* Action Buttons - Bottom Left */}
+            <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-600">
               <Button
                 type="button"
                 variant="outline"
+                className="h-12 px-8 text-lg border-2 border-gray-500 hover:border-gray-400 bg-gray-800 text-white hover:bg-gray-700"
                 onClick={() => {
                   form.reset();
                   setSelectedLocation(null);
@@ -438,7 +487,7 @@ const ReportIssue = () => {
               </Button>
               <Button
                 type="submit"
-                className="bg-civic-blue hover:bg-civic-blue-dark"
+                className="h-12 px-8 text-lg bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600 hover:border-blue-700"
               >
                 Submit Report
               </Button>

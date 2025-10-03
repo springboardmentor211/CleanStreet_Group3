@@ -77,13 +77,13 @@ export default function Welcome() {
             ) : (
               <>
                 <Link
-                  to="/login"
+                  to="/auth"
                   className="text-white hover:text-cs-blue-light transition-colors px-4 py-2"
                 >
                   Login
                 </Link>
                 <Link
-                  to="/register"
+                  to="/auth"
                   className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
                 >
                   Register
@@ -95,50 +95,95 @@ export default function Welcome() {
       </nav>
 
       {/* Hero Section */}
-      <section className="min-h-screen flex flex-col justify-between items-center px-4 sm:px-8 py-16 sm:py-24">
-        <div className="flex-1 flex flex-col justify-center items-center text-center max-w-7xl mx-auto">
-          <h1 className="text-white text-4xl sm:text-6xl lg:text-7xl font-bold mb-6">
-            Make Our City
-            <span className="block text-cs-blue-secondary">Clean & Safe</span>
-          </h1>
-          <p className="text-white/80 text-xl sm:text-2xl max-w-3xl mx-auto mb-12">
-            Join thousands of citizens reporting issues and working together to
-            improve our community. From potholes to streetlights, your voice
-            matters.
-          </p>
+      <section className="min-h-screen flex flex-col justify-between items-center px-4 sm:px-8 py-16 sm:py-24 relative overflow-hidden">
+        {/* Background Animation Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-cs-blue-primary/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-cs-blue-secondary/5 rounded-full blur-3xl animate-pulse delay-300"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-cs-blue-primary/3 to-cs-blue-secondary/3 rounded-full blur-3xl animate-pulse delay-700"></div>
+        </div>
+
+        <div className="flex-1 flex flex-col justify-center items-center text-center max-w-7xl mx-auto relative z-10">
+          <div className="animate-in slide-in-from-top duration-700">
+            <h1 className="text-white text-4xl sm:text-6xl lg:text-7xl font-bold mb-6">
+              Make Our City
+              <span className="block bg-gradient-to-r from-cs-blue-secondary to-cs-blue-light bg-clip-text text-transparent">
+                Clean & Safe
+              </span>
+            </h1>
+          </div>
+          
+          <div className="animate-in slide-in-from-bottom duration-700 delay-200">
+            <p className="text-white/80 text-xl sm:text-2xl max-w-3xl mx-auto mb-12 leading-relaxed">
+              Join thousands of citizens reporting issues and working together to
+              improve our community. From potholes to streetlights, your voice
+              matters.
+            </p>
+          </div>
+
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
+            <div className="animate-in slide-in-from-left duration-700 delay-300">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+                <Users className="w-8 h-8 text-cs-blue-secondary mx-auto mb-3" />
+                <h3 className="text-white font-semibold mb-2">Community Driven</h3>
+                <p className="text-white/70 text-sm">Join thousands of active citizens making a difference</p>
+              </div>
+            </div>
+            
+            <div className="animate-in slide-in-from-bottom duration-700 delay-400">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+                <MapPin className="w-8 h-8 text-cs-blue-secondary mx-auto mb-3" />
+                <h3 className="text-white font-semibold mb-2">Easy Reporting</h3>
+                <p className="text-white/70 text-sm">Report issues quickly with location and photo upload</p>
+              </div>
+            </div>
+            
+            <div className="animate-in slide-in-from-right duration-700 delay-500">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105">
+                <CheckCircle className="w-8 h-8 text-cs-blue-secondary mx-auto mb-3" />
+                <h3 className="text-white font-semibold mb-2">Track Progress</h3>
+                <p className="text-white/70 text-sm">See real-time updates on reported issues</p>
+              </div>
+            </div>
+          </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-16">
-            {isAuthenticated ? (
-              <Link
-                to="/dashboard"
-                className="flex items-center space-x-2 bg-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:bg-cs-blue-primary transition-colors"
-              >
-                <span>Go to Dashboard</span>
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            ) : (
-              <>
+          <div className="animate-in slide-in-from-bottom duration-700 delay-600">
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6 mb-16">
+              {isAuthenticated ? (
                 <Link
-                  to="/register"
-                  className="flex items-center space-x-2 bg-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:bg-cs-blue-primary transition-colors"
+                  to="/dashboard"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-cs-blue-primary to-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:from-cs-blue-secondary hover:to-cs-blue-primary transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cs-blue-primary/20"
                 >
-                  <span>Start Reporting Issues</span>
+                  <span>Go to Dashboard</span>
                   <ArrowRight className="w-5 h-5" />
                 </Link>
-                <Link
-                  to="/complaints"
-                  className="flex items-center space-x-2 border border-white/30 text-white px-8 py-4 rounded-cs-button text-lg hover:bg-white/5 transition-colors"
-                >
-                  <span>View Community Reports</span>
-                </Link>
-              </>
-            )}
+              ) : (
+                <>
+                  <Link
+                    to="/auth"
+                    className="flex items-center space-x-2 bg-gradient-to-r from-cs-blue-primary to-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:from-cs-blue-secondary hover:to-cs-blue-primary transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cs-blue-primary/20"
+                  >
+                    <span>Start Reporting Issues</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                  <Link
+                    to="/complaints"
+                    className="flex items-center space-x-2 border border-white/30 text-white px-8 py-4 rounded-cs-button text-lg hover:bg-white/10 hover:border-white/50 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+                  >
+                    <span>View Community Reports</span>
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Scroll Button */}
-        <Explore/>
+        <div className="animate-in fade-in duration-700 delay-800">
+          <Explore/>
+        </div>
       </section>
 
     

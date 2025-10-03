@@ -1,5 +1,5 @@
 import { Layout } from "@/components/Layout";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { issuesAPI } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { 
@@ -19,14 +19,49 @@ interface StatCardProps {
   icon: React.ReactNode;
 }
 
+// Animated Counter Component
+function AnimatedCounter({ end, duration = 2000 }: { end: number; duration?: number }) {
+  const [current, setCurrent] = useState(0);
+  const startTime = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (end === 0) {
+      setCurrent(0);
+      return;
+    }
+
+    const animateCount = (timestamp: number) => {
+      if (startTime.current === null) startTime.current = timestamp;
+      
+      const progress = Math.min((timestamp - startTime.current) / duration, 1);
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4); // Smooth easing
+      
+      setCurrent(Math.floor(easeOutQuart * end));
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateCount);
+      } else {
+        setCurrent(end);
+      }
+    };
+
+    startTime.current = null;
+    requestAnimationFrame(animateCount);
+  }, [end, duration]);
+
+  return <>{current}</>;
+}
+
 function StatCard({ title, value, icon }: StatCardProps) {
+  const numericValue = typeof value === 'string' ? parseInt(value) || 0 : value;
+  
   return (
-    <div className="border border-white/30 rounded-lg bg-background p-6 flex flex-col items-center justify-center min-h-[186px]">
-      <div className="mb-4">
+    <div className="border border-white/30 rounded-lg bg-background p-6 flex flex-col items-center justify-center min-h-[186px] transform transition-all duration-300 hover:scale-105 hover:border-cs-blue-secondary/50">
+      <div className="mb-4 transform transition-transform duration-300 hover:scale-110">
         {icon}
       </div>
-      <div className="text-white text-[30px] font-bold mb-2">
-        {value}
+      <div className="text-white text-[30px] font-bold mb-2 tabular-nums">
+        <AnimatedCounter end={numericValue} />
       </div>
       <div className="text-white text-2xl font-light text-center">
         {title}

@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const issueRoutes = require('./routes/issues');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
+const bookmarkRoutes = require('./routes/bookmarks');
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/issues', issueRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/bookmarks', bookmarkRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -78,6 +80,214 @@ app.get('/api/health', (req, res) => {
     message: 'Clean Street API is running!',
     version: '1.0.0'
   });
+});
+
+// Test issues endpoint
+app.get('/api/test-issues', async (req, res) => {
+  try {
+    const Issue = require('./models/Issue');
+    const count = await Issue.countDocuments({ isDeleted: { $ne: true } });
+    const issues = await Issue.find({ isDeleted: { $ne: true } }).limit(5);
+    res.json({
+      success: true,
+      message: 'Issues endpoint working',
+      totalIssues: count,
+      sampleIssues: issues
+    });
+  } catch (error) {
+    console.error('Test issues error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Debug endpoint to check current status values in database
+app.get('/api/debug-status', async (req, res) => {
+  try {
+    const Issue = require('./models/Issue');
+    
+    // Get all unique status values from the database
+    const statusCounts = await Issue.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    
+    const totalIssues = await Issue.countDocuments({ isDeleted: { $ne: true } });
+    
+    // Also get sample issues to see their actual status values
+    const sampleIssues = await Issue.find({ isDeleted: { $ne: true } })
+      .select('title status createdAt')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      totalIssues,
+      statusBreakdown: statusCounts,
+      sampleIssues,
+      message: 'Current status values in database'
+    });
+  } catch (error) {
+    console.error('Debug status error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Create test issues with proper status values (for testing)
+app.post('/api/create-test-issues', async (req, res) => {
+  try {
+    const Issue = require('./models/Issue');
+    const User = require('./models/User');
+    
+    // Find a user to assign as reporter (or create one)
+    let testUser = await User.findOne({ email: 'test@cleanstreet.com' });
+    if (!testUser) {
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      testUser = new User({
+        username: 'testuser',
+        email: 'test@cleanstreet.com',
+        password: await bcrypt.hash('testpass123', salt),
+        fullName: 'Test User'
+      });
+      await testUser.save();
+    }
+    
+    const testIssues = [
+      {
+        title: 'Test Pothole Issue',
+        description: 'A large pothole on Main Street causing traffic issues',
+        category: 'Pothole',
+        address: '123 Main Street, City',
+        location: { type: 'Point', coordinates: [-74.006, 40.7128] },
+        status: 'Received',
+        priority: 'High',
+        reportedBy: testUser._id
+      },
+      {
+        title: 'Test Garbage Collection',
+        description: 'Overflowing garbage bins on Elm Street',
+        category: 'Garbage',
+        address: '456 Elm Street, City',
+        location: { type: 'Point', coordinates: [-74.007, 40.7129] },
+        status: 'In Progress',
+        priority: 'Medium',
+        reportedBy: testUser._id
+      },
+      {
+        title: 'Test Streetlight Repair',
+        description: 'Broken streetlight creating safety hazard',
+        category: 'Streetlight',
+        address: '789 Oak Avenue, City',
+        location: { type: 'Point', coordinates: [-74.008, 40.7130] },
+        status: 'Resolved',
+        priority: 'Medium',
+        reportedBy: testUser._id
+      }
+    ];
+    
+    const createdIssues = await Issue.insertMany(testIssues);
+    
+    res.json({
+      success: true,
+      message: 'Test issues created successfully',
+      createdCount: createdIssues.length,
+      issues: createdIssues
+    });
+  } catch (error) {
+    console.error('Create test issues error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Cleanup invalid votes endpoint (run once to fix existing data)
+app.post('/api/cleanup-votes', async (req, res) => {
+  try {
+    const Issue = require('./models/Issue');
+    const issues = await Issue.find({});
+    
+    let cleanedCount = 0;
+    for (let issue of issues) {
+      const originalVotersCount = issue.voters.length;
+      // Remove votes with null or undefined users
+      issue.voters = issue.voters.filter(vote => vote && vote.user);
+      
+      if (issue.voters.length !== originalVotersCount) {
+        cleanedCount++;
+        await issue.save();
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: 'Cleanup completed',
+      issuesProcessed: issues.length,
+      issuesCleaned: cleanedCount
+    });
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Migrate status values from old format to new format
+app.post('/api/migrate-status', async (req, res) => {
+  try {
+    const Issue = require('./models/Issue');
+    
+    // Status mapping from old to new
+    const statusMapping = {
+      'open': 'Received',
+      'in-progress': 'In Progress', 
+      'resolved': 'Resolved',
+      'closed': 'Closed',
+      'pending': 'Pending'
+    };
+    
+    let migratedCount = 0;
+    
+    for (const [oldStatus, newStatus] of Object.entries(statusMapping)) {
+      const result = await Issue.updateMany(
+        { status: oldStatus, isDeleted: { $ne: true } },
+        { $set: { status: newStatus } }
+      );
+      migratedCount += result.modifiedCount;
+      console.log(`Migrated ${result.modifiedCount} issues from '${oldStatus}' to '${newStatus}'`);
+    }
+    
+    // Also handle any issues with null/undefined status
+    const nullStatusResult = await Issue.updateMany(
+      { $or: [{ status: null }, { status: { $exists: false } }], isDeleted: { $ne: true } },
+      { $set: { status: 'Received' } }
+    );
+    migratedCount += nullStatusResult.modifiedCount;
+    console.log(`Set default status for ${nullStatusResult.modifiedCount} issues with null/undefined status`);
+    
+    res.json({
+      success: true,
+      message: 'Status migration completed',
+      migratedCount,
+      statusMapping
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
 // Error handling middleware

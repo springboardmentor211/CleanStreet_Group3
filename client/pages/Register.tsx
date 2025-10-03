@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "@/lib/api";
 
@@ -11,6 +11,11 @@ export default function Register() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Redirect to new AuthPage for better UX
+  useEffect(() => {
+    navigate("/auth");
+  }, [navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();

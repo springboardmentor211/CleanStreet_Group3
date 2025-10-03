@@ -382,7 +382,7 @@ router.put('/update-profile', [
 // Debug endpoint to check users (remove in production)
 router.get('/debug/users', async (req, res) => {
   try {
-    const users = await User.find({}).select('_id username email fullName role createdAt').limit(10);
+    const users = await User.find({}).select('_id username email fullName role createdAt');
     res.json({
       total: await User.countDocuments(),
       users: users

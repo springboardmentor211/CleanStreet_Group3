@@ -125,6 +125,17 @@ export function Layout({ children }: LayoutProps) {
                   </Link>
 
                   <Link
+                    to="/bookmarks"
+                    className={`text-base ${
+                      isActive("/bookmarks")
+                        ? "text-cs-blue-secondary"
+                        : "text-white"
+                    } hover:text-cs-blue-secondary transition-colors`}
+                  >
+                    Bookmarks
+                  </Link>
+
+                  <Link
                     to="/maps"
                     className={`text-base ${
                       isActive("/maps")
@@ -134,6 +145,17 @@ export function Layout({ children }: LayoutProps) {
                   >
                     Issue Map
                   </Link>
+
+                  {/* <Link
+                    to="/bookmarks"
+                    className={`text-base ${
+                      isActive("/bookmarks")
+                        ? "text-cs-blue-secondary"
+                        : "text-white"
+                    } hover:text-cs-blue-secondary transition-colors`}
+                  >
+                    Bookmarks
+                  </Link> */}
                 </div>
               )}
 

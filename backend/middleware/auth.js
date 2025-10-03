@@ -65,18 +65,31 @@ const auth = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     // console.log('Token decoded:', decoded);
     
-    // Check if user still exists
-    // console.log('Looking for user with ID:', decoded.user.id);
-    // console.log('User ID type:', typeof decoded.user.id);
-    // console.log('User ID length:', decoded.user.id ? decoded.user.id.length : 'No ID');
+    // Handle different token structures safely
+    let userId = null;
+    if (decoded.user && (decoded.user.id || decoded.user._id)) {
+      userId = decoded.user.id || decoded.user._id;
+    } else if (decoded.id || decoded._id) {
+      userId = decoded.id || decoded._id;
+    } else if (decoded.userId) {
+      userId = decoded.userId;
+    }
+
+    if (!userId) {
+      console.error('No valid user ID found in token:', decoded);
+      return res.status(401).json({ message: 'Invalid token structure' });
+    }
+    
+    // console.log('Looking for user with ID:', userId);
+    // console.log('User ID type:', typeof userId);
     
     const mongoose = require('mongoose');
-    // console.log('Is valid ObjectId in middleware:', mongoose.Types.ObjectId.isValid(decoded.user.id));
+    // console.log('Is valid ObjectId in middleware:', mongoose.Types.ObjectId.isValid(userId));
     
-    const user = await User.findById(decoded.user.id).select('-password');
+    const user = await User.findById(userId).select('-password');
     // console.log('User found in auth middleware:', !!user);
     
     if (!user) {

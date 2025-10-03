@@ -133,6 +133,8 @@ export default function Maps() {
           loadedIssues = res.data.issues || [];
         }
         setIssues(loadedIssues);
+        console.log(`Loaded ${loadedIssues.length} issues`);
+        console.log(loadedIssues);
         addIssueMarkers(loadedIssues);
         
         // Check for URL parameters to focus on specific issue

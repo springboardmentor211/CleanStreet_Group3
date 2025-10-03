@@ -83,7 +83,11 @@ const UserSchema = new mongoose.Schema({
   blockReason: {
     type: String,
     maxlength: 500
-  }
+  },
+  bookmarkedIssues: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Issue'
+  }]
 }, {
   timestamps: true
 });
