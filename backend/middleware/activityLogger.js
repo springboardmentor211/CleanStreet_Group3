@@ -10,50 +10,50 @@ class ActivityLogger {
   constructor() {
     this.actionMappings = {
       // Authentication routes
-      'POST:/api/auth/register': 'register',
-      'POST:/api/auth/login': 'login',
-      'POST:/api/auth/logout': 'logout',
-      'POST:/api/auth/forgot-password': 'password_reset',
-      'POST:/api/auth/reset-password': 'password_change',
-      'GET:/api/auth/me': 'profile_view',
-      'PUT:/api/auth/update-profile': 'profile_edit',
-      'POST:/api/auth/upload-profile-image': 'profile_photo_upload',
+      'POST:/api/auth/register': { action: 'register', category: 'authentication' },
+      'POST:/api/auth/login': { action: 'login', category: 'authentication' },
+      'POST:/api/auth/logout': { action: 'logout', category: 'authentication' },
+      'POST:/api/auth/forgot-password': { action: 'password_reset', category: 'authentication' },
+      'POST:/api/auth/reset-password': { action: 'password_change', category: 'authentication' },
+      'GET:/api/auth/me': { action: 'profile_view', category: 'profile' },
+      'PUT:/api/auth/update-profile': { action: 'profile_edit', category: 'profile' },
+      'POST:/api/auth/upload-profile-image': { action: 'profile_photo_upload', category: 'profile' },
       
       // Issue routes
-      'POST:/api/issues': 'issue_create',
-      'GET:/api/issues/:id': 'issue_view',
-      'GET:/api/issues': 'issue_list_view',
-      'PUT:/api/issues/:id': 'issue_edit',
-      'DELETE:/api/issues/:id': 'issue_delete',
-      'POST:/api/issues/:id/vote': 'issue_vote',
-      'POST:/api/issues/:id/comment': 'issue_comment',
-      'GET:/api/issues/user/:id': 'user_issues_view',
-      'GET:/api/issues/stats/dashboard': 'dashboard_stats_view',
+      'POST:/api/issues': { action: 'issue_create', category: 'issue_management' },
+      'GET:/api/issues/:id': { action: 'issue_view', category: 'navigation' },
+      'GET:/api/issues': { action: 'issue_list_view', category: 'navigation' },
+      'PUT:/api/issues/:id': { action: 'issue_edit', category: 'issue_management' },
+      'DELETE:/api/issues/:id': { action: 'issue_delete', category: 'issue_management' },
+      'POST:/api/issues/:id/vote': { action: 'issue_vote', category: 'engagement' },
+      'POST:/api/issues/:id/comment': { action: 'issue_comment', category: 'engagement' },
+      'GET:/api/issues/user/:id': { action: 'user_issues_view', category: 'navigation' },
+      'GET:/api/issues/stats/dashboard': { action: 'dashboard_stats_view', category: 'navigation' },
       
       // Bookmark routes
-      'POST:/api/bookmarks/:id/toggle': 'issue_bookmark_toggle',
-      'GET:/api/bookmarks/:id/status': 'bookmark_status_check',
-      'GET:/api/bookmarks': 'bookmarks_view',
-      'DELETE:/api/bookmarks/:id': 'issue_unbookmark',
+      'POST:/api/bookmarks/:issueId/toggle': { action: 'issue_bookmark', category: 'bookmark' },
+      'GET:/api/bookmarks/:issueId/status': { action: 'bookmark_status_check', category: 'bookmark' },
+      'GET:/api/bookmarks': { action: 'bookmarks_view', category: 'navigation' },
+      'DELETE:/api/bookmarks/:issueId': { action: 'issue_unbookmark', category: 'bookmark' },
       
       // Admin routes
-      'GET:/api/admin/stats': 'admin_dashboard_view',
-      'GET:/api/admin/users': 'admin_users_view',
-      'GET:/api/admin/issues': 'admin_issues_view',
-      'PUT:/api/admin/users/:id/block': 'admin_user_block',
-      'PUT:/api/admin/issues/:id/status': 'admin_issue_status_change',
-      'PUT:/api/admin/issues/:id/assign': 'admin_issue_assign',
-      'GET:/api/admin/trends': 'admin_trends_view',
+      'GET:/api/admin/stats': { action: 'admin_dashboard_view', category: 'admin' },
+      'GET:/api/admin/users': { action: 'admin_users_view', category: 'admin' },
+      'GET:/api/admin/issues': { action: 'admin_issues_view', category: 'admin' },
+      'PUT:/api/admin/users/:id/block': { action: 'admin_user_block', category: 'admin' },
+      'PUT:/api/admin/issues/:id/status': { action: 'admin_issue_status_change', category: 'admin' },
+      'PUT:/api/admin/issues/:id/assign': { action: 'admin_issue_assign', category: 'admin' },
+      'GET:/api/admin/trends': { action: 'admin_trends_view', category: 'admin' },
       
       // Admin User Profile routes
-      'GET:/api/admin/users/:id/profile': 'admin_user_profile_view',
-      'GET:/api/admin/users/:id/activities': 'admin_user_activities_view',
-      'GET:/api/admin/users/:id/export': 'admin_user_data_export',
+      'GET:/api/admin/users/:id/profile': { action: 'admin_user_profile_view', category: 'admin' },
+      'GET:/api/admin/users/:id/activities': { action: 'admin_user_activities_view', category: 'admin' },
+      'GET:/api/admin/users/:id/export': { action: 'admin_user_data_export', category: 'admin' },
       
       // Profile routes (legacy)
-      'GET:/api/users/profile': 'profile_view',
-      'PUT:/api/users/profile': 'profile_edit',
-      'POST:/api/users/profile/photo': 'profile_photo_upload'
+      'GET:/api/users/profile': { action: 'profile_view', category: 'profile' },
+      'PUT:/api/users/profile': { action: 'profile_edit', category: 'profile' },
+      'POST:/api/users/profile/photo': { action: 'profile_photo_upload', category: 'profile' }
     };
   }
 
@@ -106,8 +106,8 @@ class ActivityLogger {
         return; // Only log authenticated user activities
       }
 
-      const action = this.determineAction(req, res, responseData);
-      if (!action) {
+      const actionConfig = this.determineAction(req, res, responseData);
+      if (!actionConfig) {
         // Log for debugging - what routes are we missing?
         console.log(`No action mapped for: ${req.method}:${req.path}`, {
           route: req.route?.path,
@@ -116,7 +116,8 @@ class ActivityLogger {
         return;
       }
       
-      console.log(`Activity logged: ${action} for user ${req.user?.username} (${userId})`);
+      const { action, category } = actionConfig;
+      console.log(`Activity logged: ${action} (${category}) for user ${req.user?.username} (${userId})`);
 
       const metadata = this.extractMetadata(req, res, responseTime);
       const details = this.extractDetails(req, res, responseData, action);
@@ -125,6 +126,7 @@ class ActivityLogger {
       const logEntry = new UserActivityLog({
         userId,
         action,
+        category,
         details,
         metadata,
         targetResource,
@@ -163,49 +165,92 @@ class ActivityLogger {
   // Determine action based on route and request
   determineAction(req, res, responseData) {
     // Try multiple route key approaches
-    let action = null;
+    let actionConfig = null;
     
-    // First, try with the actual route path (if available)
-    if (req.route?.path) {
-      const routeKey = `${req.method}:${this.normalizeRoute(req.route.path)}`;
-      action = this.actionMappings[routeKey];
+    // First, try with the actual route path (if available) and construct full API path
+    if (req.route?.path && req.baseUrl) {
+      const routeKey = `${req.method}:${req.baseUrl}${req.route.path}`;
+      actionConfig = this.actionMappings[routeKey];
     }
     
-    // If not found, try with the request path
-    if (!action) {
+    // If not found, try with normalized paths
+    if (!actionConfig) {
       const normalizedPath = this.normalizeRoute(req.path);
       const routeKey = `${req.method}:${normalizedPath}`;
-      action = this.actionMappings[routeKey];
+      actionConfig = this.actionMappings[routeKey];
     }
 
-    // Special case handling for dynamic actions
-    if (!action) {
-      if (req.path.includes('/issues/') && req.method === 'POST' && req.path.includes('/vote')) {
-        action = req.body?.type === 'up' ? 'issue_vote_up' : 'issue_vote_down';
-      } else if (req.path.includes('/issues/') && req.method === 'POST' && req.path.includes('/comment')) {
-        action = 'issue_comment';
-      } else if (req.path.includes('/bookmarks/') && req.method === 'POST' && req.path.includes('/toggle')) {
-        action = 'issue_bookmark_toggle';
-      } else if (req.path.includes('/issues/') && req.method === 'GET' && req.path !== '/api/issues') {
-        action = 'issue_view';
-      } else if (req.path === '/api/issues' && req.method === 'GET') {
-        action = 'issue_list_view';
-      } else if (req.path.includes('/admin/users/') && req.method === 'GET' && req.path.includes('/profile')) {
-        action = 'admin_user_profile_view';
-      } else if (req.method === 'GET' && !req.path.includes('/api/')) {
-        action = 'page_view';
+    // Special case handling for dynamic actions that middleware should catch
+    if (!actionConfig) {
+      
+      // Handle vote actions with proper categorization
+      if (req.method === 'POST' && (
+        req.path.match(/\/api\/issues\/[^\/]+\/vote/) ||
+        (req.path.match(/\/[^\/]+\/vote/) && req.baseUrl === '/api/issues')
+      )) {
+        const voteType = req.body?.type || req.body?.voteType;
+        if (voteType === 'up') {
+          actionConfig = { action: 'issue_vote_up', category: 'engagement' };
+        } else if (voteType === 'down') {
+          actionConfig = { action: 'issue_vote_down', category: 'engagement' };
+        } else {
+          actionConfig = { action: 'issue_vote', category: 'engagement' };
+        }
+      }
+      // Handle bookmark toggle - check both full path and route-relative path
+      else if (req.method === 'POST' && (
+        (req.path.match(/\/[^\/]+\/toggle/) && req.baseUrl === '/api/bookmarks') ||
+        (req.path.match(/\/api\/bookmarks\/[^\/]+\/toggle/))
+      )) {
+        actionConfig = { action: 'issue_bookmark', category: 'bookmark' };
+      }
+      // Handle bookmark status check
+      else if (req.method === 'GET' && (
+        (req.path.match(/\/[^\/]+\/status/) && req.baseUrl === '/api/bookmarks') ||
+        (req.path.match(/\/api\/bookmarks\/[^\/]+\/status/))
+      )) {
+        actionConfig = { action: 'bookmark_status_check', category: 'bookmark' };
+      }
+      // Handle comment actions
+      else if (req.method === 'POST' && (
+        req.path.match(/\/api\/issues\/[^\/]+\/comment/) ||
+        (req.path.match(/\/[^\/]+\/comment/) && req.baseUrl === '/api/issues')
+      )) {
+        actionConfig = { action: 'issue_comment', category: 'engagement' };
+      }
+      // Handle individual issue view
+      else if (req.method === 'GET' && (
+        req.path.match(/\/api\/issues\/[^\/]+$/) ||
+        (req.path.match(/\/[^\/]+$/) && req.baseUrl === '/api/issues')
+      )) {
+        actionConfig = { action: 'issue_view', category: 'navigation' };
+      }
+      // Handle issues list view
+      else if (req.path === '/api/issues' && req.method === 'GET') {
+        actionConfig = { action: 'page_view', category: 'navigation' };
+      }
+      // Handle admin user profile view
+      else if (req.path.match(/\/api\/admin\/users\/[^\/]+\/profile/) && req.method === 'GET') {
+        actionConfig = { action: 'admin_user_profile_view', category: 'admin' };
+      }
+      // Default fallback for API routes
+      else if (req.path.startsWith('/api/')) {
+        actionConfig = { action: 'api_request', category: 'navigation' };
+      }
+      // Non-API routes (frontend page views)
+      else if (req.method === 'GET' && !req.path.includes('/api/')) {
+        actionConfig = { action: 'page_view', category: 'navigation' };
       }
     }
 
-    return action;
+    return actionConfig;
   }
 
   // Normalize route paths to handle parameters
   normalizeRoute(path) {
     return path
-      .replace(/\/:[^\/]+/g, '/:id') // Replace :userId, :issueId, etc. with :id
-      .replace(/\/[0-9a-fA-F]{24}/g, '/:id') // Replace MongoDB ObjectIds with :id
-      .replace(/\/\d+/g, '/:id') // Replace numeric IDs with :id
+      .replace(/\/[0-9a-fA-F]{24}/g, '/:issueId') // Replace MongoDB ObjectIds with :issueId
+      .replace(/\/\d+/g, '/:issueId') // Replace numeric IDs with :issueId
       .replace(/\/$/, ''); // Remove trailing slash
   }
 
@@ -329,14 +374,27 @@ class ActivityLogger {
   }
 
   // Manual logging method for custom activities
-  static async log(userId, action, details = {}, metadata = {}) {
+  static async log(userId, action, category, details = {}, metadata = {}) {
     try {
+      // Handle backward compatibility - if category is an object, it's the old signature
+      let actualCategory = category;
+      let actualDetails = details;
+      let actualMetadata = metadata;
+      
+      if (typeof category === 'object') {
+        // Old signature: log(userId, action, details, metadata)
+        actualCategory = 'navigation'; // default category
+        actualDetails = category;
+        actualMetadata = details || {};
+      }
+
       const logEntry = new UserActivityLog({
         userId,
         action,
-        details,
+        category: actualCategory,
+        details: actualDetails,
         metadata: {
-          ...metadata,
+          ...actualMetadata,
           manualLog: true
         },
         timestamp: new Date()

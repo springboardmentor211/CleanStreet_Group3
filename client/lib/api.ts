@@ -415,6 +415,7 @@ export const adminAPI = {
     page?: number;
     limit?: number;
     action?: string;
+    category?: string;
     startDate?: string;
     endDate?: string;
     resourceType?: string;
@@ -423,6 +424,7 @@ export const adminAPI = {
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.action) query.append('action', params.action);
+    if (params?.category) query.append('category', params.category);
     if (params?.startDate) query.append('startDate', params.startDate);
     if (params?.endDate) query.append('endDate', params.endDate);
     if (params?.resourceType) query.append('resourceType', params.resourceType);

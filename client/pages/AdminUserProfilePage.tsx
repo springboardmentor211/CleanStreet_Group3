@@ -97,7 +97,8 @@ const AdminUserProfilePage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [activityFilters, setActivityFilters] = useState({
     action: 'all',
-    resourceType: '',
+    category: 'all',
+    resourceType: 'all',
     startDate: '',
     endDate: ''
   });
@@ -145,9 +146,15 @@ const AdminUserProfilePage = () => {
       
       // Convert 'all' values back to empty strings for the API
       const apiFilters = {
-        ...activityFilters,
-        action: activityFilters.action === 'all' ? '' : activityFilters.action
+        action: activityFilters.action === 'all' ? '' : activityFilters.action,
+        category: activityFilters.category === 'all' ? '' : activityFilters.category,
+        resourceType: activityFilters.resourceType === 'all' ? '' : activityFilters.resourceType,
+        startDate: activityFilters.startDate,
+        endDate: activityFilters.endDate
       };
+      
+      // Debug: Log filters being sent to API
+      console.log('Fetching activities with filters:', apiFilters);
       
       const response = await adminAPI.getUserActivityLogs(userId!, {
         page: currentPage,
@@ -235,22 +242,50 @@ const AdminUserProfilePage = () => {
 
   const getActionReadableName = (action: string) => {
     const actionMap: { [key: string]: string } = {
+      // Authentication
       'login': 'Logged In',
       'logout': 'Logged Out',
       'register': 'Account Registered',
+      'login_page_view': 'Visited Login Page',
+      'register_page_view': 'Visited Register Page',
+      'forgot_password_page_view': 'Visited Forgot Password',
+      'reset_password_page_view': 'Visited Reset Password',
+      
+      // Issue Management
       'issue_create': 'Created Issue',
-      'issue_view': 'Viewed Issue',
+      'issue_view': 'Viewed Issue Details',
       'issue_edit': 'Edited Issue',
       'issue_vote_up': 'Upvoted Issue',
       'issue_vote_down': 'Downvoted Issue',
       'issue_comment': 'Commented on Issue',
       'issue_bookmark': 'Bookmarked Issue',
-      'download_pdf': 'Downloaded PDF',
+      'report_page_view': 'Visited Report Page',
+      
+      // Downloads & Sharing
+      'download_activity': 'Downloaded Content',
+      'download_pdf': 'Downloaded PDF Report',
+      'share_activity': 'Shared Content',
+      
+      // Profile Activities
       'profile_view': 'Viewed Profile',
       'profile_edit': 'Updated Profile',
-      'search_performed': 'Performed Search',
+      
+      // Navigation & Pages
+      'welcome_page_view': 'Visited Welcome Page',
+      'dashboard_view': 'Visited Dashboard',
+      'explore_page_view': 'Visited Explore Page',
       'map_view': 'Viewed Map',
-      'page_view': 'Viewed Page'
+      'bookmarks_view': 'Visited Bookmarks',
+      'community_reports_view': 'Visited Community Reports',
+      'page_view': 'Viewed Page',
+      
+      // Admin Activities
+      'admin_dashboard_view': 'Accessed Admin Dashboard',
+      'admin_user_profile_view': 'Viewed User Profile (Admin)',
+      'admin_user_activities_view': 'Viewed User Activities (Admin)',
+      
+      // Other
+      'search_performed': 'Performed Search'
     };
     
     return actionMap[action] || action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -320,6 +355,15 @@ const AdminUserProfilePage = () => {
             </div>
             
             <div className="flex items-center gap-3">
+              <Button 
+                onClick={() => navigate(`/admin/user-activities/${userId}`)}
+                variant="outline"
+                className="bg-transparent border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400"
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                View Activity Analysis
+              </Button>
+              
               <Select value={timeframe} onValueChange={setTimeframe}>
                 <SelectTrigger className="w-32 bg-[#1f2937] border-white/30 text-white">
                   <SelectValue />
@@ -514,19 +558,116 @@ const AdminUserProfilePage = () => {
                   
                   {/* Activity Filters */}
                   <div className="flex items-center gap-2">
-                    <Select value={activityFilters.action} onValueChange={(value) => setActivityFilters(prev => ({ ...prev, action: value === 'all' ? '' : value }))}>
+                    <Select 
+                      value={activityFilters.action} 
+                      onValueChange={(value) => {
+                        setActivityFilters(prev => ({ ...prev, action: value }));
+                        setCurrentPage(1); // Reset to first page when filter changes
+                      }}
+                    >
                       <SelectTrigger className="w-40 bg-[#1f2937] border-white/30 text-white">
                         <SelectValue placeholder="Filter by action" />
                       </SelectTrigger>
                       <SelectContent className="bg-[#1f2937] border-white/30">
                         <SelectItem value="all">All Actions</SelectItem>
-                        <SelectItem value="login">Login</SelectItem>
-                        <SelectItem value="issue_view">Issue Views</SelectItem>
+                        
+                        {/* Authentication Actions */}
+                        <SelectItem value="login">Login Actions</SelectItem>
+                        <SelectItem value="logout">Logout Actions</SelectItem>
+                        <SelectItem value="register">Register Actions</SelectItem>
+                        <SelectItem value="login_page_view">Login Page Visits</SelectItem>
+                        <SelectItem value="register_page_view">Register Page Visits</SelectItem>
+                        
+                        {/* Issue Management */}
+                        <SelectItem value="issue_view">Issue Detail Views</SelectItem>
                         <SelectItem value="issue_create">Issue Creation</SelectItem>
                         <SelectItem value="issue_vote_up">Upvotes</SelectItem>
-                        <SelectItem value="download_pdf">Downloads</SelectItem>
+                        <SelectItem value="issue_vote_down">Downvotes</SelectItem>
+                        <SelectItem value="issue_bookmark">Bookmarks</SelectItem>
+                        <SelectItem value="issue_comment">Comments</SelectItem>
+                        <SelectItem value="report_page_view">Report Page Visits</SelectItem>
+                        
+                        {/* Page Navigation */}
+                        <SelectItem value="dashboard_view">Dashboard Visits</SelectItem>
+                        <SelectItem value="explore_page_view">Explore Page Visits</SelectItem>
+                        <SelectItem value="map_view">Map Views</SelectItem>
+                        <SelectItem value="bookmarks_view">Bookmarks Page Visits</SelectItem>
+                        <SelectItem value="community_reports_view">Community Reports Visits</SelectItem>
+                        <SelectItem value="profile_view">Profile Views</SelectItem>
+                        
+                        {/* Actions */}
+                        <SelectItem value="download_activity">Downloads</SelectItem>
+                        <SelectItem value="share_activity">Shares</SelectItem>
+                        <SelectItem value="profile_edit">Profile Edits</SelectItem>
+                        
+                        {/* Admin Actions */}
+                        <SelectItem value="admin_dashboard_view">Admin Dashboard</SelectItem>
+                        <SelectItem value="admin_user_profile_view">Admin User Profiles</SelectItem>
+                        <SelectItem value="admin_user_activities_view">Admin User Activities</SelectItem>
                       </SelectContent>
                     </Select>
+                    
+                    <Select 
+                      value={activityFilters.category} 
+                      onValueChange={(value) => {
+                        setActivityFilters(prev => ({ ...prev, category: value }));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-40 bg-[#1f2937] border-white/30 text-white">
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1f2937] border-white/30">
+                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="authentication">Authentication</SelectItem>
+                        <SelectItem value="bookmark">Bookmarks</SelectItem>
+                        <SelectItem value="download">Downloads</SelectItem>
+                        <SelectItem value="share">Sharing</SelectItem>
+                        <SelectItem value="engagement">Engagement</SelectItem>
+                        <SelectItem value="issue_management">Issue Management</SelectItem>
+                        <SelectItem value="profile">Profile</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="navigation">Navigation</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select 
+                      value={activityFilters.resourceType} 
+                      onValueChange={(value) => {
+                        setActivityFilters(prev => ({ ...prev, resourceType: value }));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-40 bg-[#1f2937] border-white/30 text-white">
+                        <SelectValue placeholder="Resource type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1f2937] border-white/30">
+                        <SelectItem value="all">All Resources</SelectItem>
+                        <SelectItem value="issue">Issues</SelectItem>
+                        <SelectItem value="user">Users</SelectItem>
+                        <SelectItem value="comment">Comments</SelectItem>
+                        <SelectItem value="bookmark">Bookmarks</SelectItem>
+                        <SelectItem value="admin_action">Admin Actions</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Button 
+                      onClick={() => {
+                        setActivityFilters({
+                          action: 'all',
+                          category: 'all',
+                          resourceType: 'all',
+                          startDate: '',
+                          endDate: ''
+                        });
+                        setCurrentPage(1);
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="bg-transparent border-white/30 text-white hover:bg-white/10"
+                    >
+                      Clear Filters
+                    </Button>
                     
                     <Button 
                       onClick={fetchActivityLogs}

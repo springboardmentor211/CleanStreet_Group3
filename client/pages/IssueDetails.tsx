@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n-context";
 import { toast } from "sonner";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import ActivityLogger from "@/lib/activity-logger";
 
 export default function IssueDetails() {
   const { id } = useParams();
@@ -141,6 +142,13 @@ export default function IssueDetails() {
           downvotes: response.data.downvotes 
         } : prev);
         setUserVote(response.data.userVote);
+
+        // Log the engagement activity
+        await ActivityLogger.logEngagement(
+          type === 'up' ? 'like' : 'dislike',
+          id,
+          issue.title
+        );
       }
     } catch (err) {
       // Revert optimistic update on error
@@ -219,6 +227,9 @@ export default function IssueDetails() {
           onClick: () => window.open(currentUrl, '_blank')
         }
       });
+
+      // Log the share activity
+      await ActivityLogger.logShare('link', id, issue.title);
     } catch (err) {
       console.error('Failed to copy link:', err);
       toast.error(t('failedToCopyLink'), {
@@ -247,11 +258,15 @@ export default function IssueDetails() {
           description: "You can find this in your saved issues.",
           duration: 3000,
         });
+        // Log bookmark activity
+        await ActivityLogger.logBookmark('bookmark', id, issue.title);
       } else {
         toast.success("Bookmark removed", {
           description: "Issue removed from your saved list.",
           duration: 3000,
         });
+        // Log unbookmark activity
+        await ActivityLogger.logBookmark('unbookmark', id, issue.title);
       }
     } catch (err) {
       console.error('Failed to toggle bookmark:', err);
@@ -669,6 +684,9 @@ export default function IssueDetails() {
         description: `Issue report with ${Array.isArray(issue.images) ? issue.images.length : 0} images saved to downloads.`,
         duration: 3000,
       });
+
+      // Log download activity
+      await ActivityLogger.logDownload('pdf', id, issue.title);
 
     } catch (err) {
       console.error('Failed to generate PDF:', err);

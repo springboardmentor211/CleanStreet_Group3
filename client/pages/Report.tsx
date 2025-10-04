@@ -28,6 +28,7 @@ import { Upload, Camera, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {Layout} from "@/components/Layout"; // Use the same layout as other pages
 import { useI18n } from "@/lib/i18n-context";
+import ActivityLogger from "@/lib/activity-logger";
 
 import MiniMap from "../components/MiniMap";
 const issueTypeEnum = [
@@ -155,6 +156,17 @@ const ReportIssue = () => {
         const errorData = await res.json().catch(() => ({}));
         console.error("Error response from backend:", errorData);
         throw new Error(errorData.message || "Failed to submit issue");
+      }
+
+      const result = await res.json();
+      
+      // Log issue creation activity
+      if (result.issue && result.issue._id) {
+        await ActivityLogger.logIssueCreate(
+          result.issue._id,
+          data.issueTitle,
+          data.category
+        );
       }
 
       toast.success("Issue reported successfully!");

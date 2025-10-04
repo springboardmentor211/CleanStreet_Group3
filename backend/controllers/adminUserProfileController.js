@@ -425,15 +425,19 @@ class AdminUserProfileController {
         page = 1, 
         limit = 50, 
         action, 
+        category,
         startDate, 
         endDate,
         resourceType 
       } = req.query;
 
+
+
       const activities = await UserActivityLog.getUserActivities(userId, {
         page: parseInt(page),
         limit: parseInt(limit),
         action: action && action.trim() ? action : undefined,
+        category: category && category.trim() ? category : undefined,
         startDate,
         endDate,
         resourceType: resourceType && resourceType.trim() ? resourceType : undefined
@@ -442,6 +446,8 @@ class AdminUserProfileController {
       // Get total count for pagination
       const totalQuery = { userId };
       if (action && action.trim()) totalQuery.action = action;
+      if (category && category.trim()) totalQuery.category = category;
+      if (resourceType && resourceType.trim()) totalQuery['targetResource.resourceType'] = resourceType;
       if (startDate || endDate) {
         totalQuery.timestamp = {};
         if (startDate) totalQuery.timestamp.$gte = new Date(startDate);

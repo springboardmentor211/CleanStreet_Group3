@@ -13,6 +13,7 @@ const adminRoutes = require('./routes/admin');
 const adminUserProfileRoutes = require('./routes/adminUserProfile');
 const uploadRoutes = require('./routes/upload');
 const bookmarkRoutes = require('./routes/bookmarks');
+const activityLogRoutes = require('./routes/activityLogs');
 
 // Import middleware
 const { logActivity } = require('./middleware/activityLogger');
@@ -81,6 +82,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/users', adminUserProfileRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/activity-logs', activityLogRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

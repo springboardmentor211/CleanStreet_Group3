@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth-context";
 import { I18nProvider } from "@/lib/i18n-context";
+import { RouteLogger } from "@/lib/route-logger";
 
 
 import Welcome from "./pages/Welcome";
@@ -26,6 +27,7 @@ import NotFound from "./pages/NotFound";
 import Maps from "./pages/Maps";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUserProfilePage from "./pages/AdminUserProfilePage";
+import AdminUserActivityPage from "./pages/AdminUserActivityPage";
 import Bookmarks from "./pages/Bookmarks";
 import { ProtectedRoute, PublicRoute } from "@/components/ProtectedRoute";
 
@@ -40,6 +42,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+          <RouteLogger />
           <Routes>
             <Route path="/" element={<Welcome />} />
             <Route path="/welcome" element={<Welcome />} />
@@ -58,6 +61,7 @@ const App = () => (
             <Route path="/bookmarks" element={<ProtectedRoute><Bookmarks /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/userprofile/:userId" element={<ProtectedRoute adminOnly><AdminUserProfilePage /></ProtectedRoute>} />
+            <Route path="/admin/user-activities/:userId" element={<ProtectedRoute adminOnly><AdminUserActivityPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </BrowserRouter>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { IssueCard, Issue } from "@/components/IssueCard";
+import ActivityLogger from "@/lib/activity-logger";
 
 // Mock data based on the Figma design
 // Remove mock data, will fetch from backend
@@ -138,6 +139,19 @@ export default function CommunityReports() {
         ...prev,
         [issueId]: result.userVote
       }));
+
+      // Log the engagement activity
+      const issueTitle = issues.find(issue => 
+        (issue._id || issue.id) === issueId
+      )?.title;
+      
+      if (issueTitle) {
+        await ActivityLogger.logEngagement(
+          type === 'up' ? 'like' : 'dislike',
+          issueId,
+          issueTitle
+        );
+      }
       
     } catch (error) {
       console.error('Error voting:', error);

@@ -17,6 +17,10 @@ const userActivityLogSchema = new mongoose.Schema({
       'register',
       'password_reset',
       'password_change',
+      'login_page_view',
+      'register_page_view',
+      'forgot_password_page_view',
+      'reset_password_page_view',
       
       // Issue Activities  
       'issue_create',
@@ -28,6 +32,14 @@ const userActivityLogSchema = new mongoose.Schema({
       'issue_comment',
       'issue_bookmark',
       'issue_unbookmark',
+      'issue_bookmark_toggle',
+      'report_page_view',
+      
+      // Content Interaction Activities
+      'download_activity',
+      'share_activity',
+      'like_activity', 
+      'dislike_activity',
       
       // Profile Activities
       'profile_view',
@@ -45,17 +57,38 @@ const userActivityLogSchema = new mongoose.Schema({
       'admin_dashboard_view',
       'admin_user_view',
       'admin_user_profile_view',
+      'admin_user_activities_view',
       'admin_user_block',
       'admin_user_unblock',
       'admin_issue_status_change',
       'admin_analytics_export',
       
-      // General Navigation
+      // Page Navigation Activities
+      'welcome_page_view',
+      'dashboard_view',
+      'explore_page_view',
+      'bookmarks_view',
+      'community_reports_view',
       'page_view',
       'session_start',
       'session_end',
       'api_request'
     ]
+  },
+  category: {
+    type: String,
+    enum: [
+      'authentication',
+      'bookmark',
+      'download', 
+      'share',
+      'engagement', // likes/dislikes/votes
+      'issue_management',
+      'profile',
+      'admin',
+      'navigation'
+    ],
+    required: true
   },
   details: {
     type: mongoose.Schema.Types.Mixed, // Flexible object for storing action-specific data
@@ -121,6 +154,7 @@ userActivityLogSchema.statics.getUserActivities = function(userId, options = {})
     limit = 50,
     page = 1,
     action,
+    category,
     startDate,
     endDate,
     resourceType
@@ -129,7 +163,10 @@ userActivityLogSchema.statics.getUserActivities = function(userId, options = {})
   let query = { userId };
   
   if (action && action.trim()) query.action = action;
+  if (category && category.trim()) query.category = category;
   if (resourceType && resourceType.trim()) query['targetResource.resourceType'] = resourceType;
+
+
   
   if (startDate || endDate) {
     query.timestamp = {};
@@ -223,6 +260,51 @@ userActivityLogSchema.statics.getActivityTrends = async function(userId, timefra
   return this.aggregate(pipeline);
 };
 
+userActivityLogSchema.statics.getCategoryStats = async function(userId, timeframe = '30d') {
+  const timeframeMs = {
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000,
+    '90d': 90 * 24 * 60 * 60 * 1000
+  };
+
+  const startDate = new Date(Date.now() - timeframeMs[timeframe]);
+  
+  const pipeline = [
+    {
+      $match: {
+        userId: new mongoose.Types.ObjectId(userId),
+        timestamp: { $gte: startDate }
+      }
+    },
+    {
+      $group: {
+        _id: '$category',
+        count: { $sum: 1 },
+        actions: { $addToSet: '$action' },
+        lastActivity: { $max: '$timestamp' },
+        successRate: {
+          $avg: { $cond: ['$isSuccessful', 1, 0] }
+        }
+      }
+    },
+    {
+      $project: {
+        category: '$_id',
+        count: 1,
+        actionTypes: { $size: '$actions' },
+        lastActivity: 1,
+        successRate: { $multiply: ['$successRate', 100] },
+        _id: 0
+      }
+    },
+    {
+      $sort: { count: -1 }
+    }
+  ];
+
+  return this.aggregate(pipeline);
+};
+
 // Instance methods
 userActivityLogSchema.methods.getReadableAction = function() {
   const actionMap = {
@@ -241,6 +323,55 @@ userActivityLogSchema.methods.getReadableAction = function() {
   };
   
   return actionMap[this.action] || this.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+// Enhanced readable action mapping for new URL-based actions
+userActivityLogSchema.methods.getReadableActionFull = function() {
+  const fullActionMap = {
+    // Authentication Activities
+    'login': 'User logged in',
+    'logout': 'User logged out', 
+    'register': 'User registered account',
+    'login_page_view': 'Visited login page',
+    'register_page_view': 'Visited registration page',
+    'forgot_password_page_view': 'Visited forgot password page',
+    'reset_password_page_view': 'Visited password reset page',
+    
+    // Issue Management
+    'issue_create': 'Created new issue',
+    'issue_view': 'Viewed issue details',
+    'issue_edit': 'Edited issue',
+    'issue_vote_up': 'Upvoted issue',
+    'issue_vote_down': 'Downvoted issue',
+    'issue_comment': 'Commented on issue',
+    'issue_bookmark': 'Bookmarked issue',
+    'report_page_view': 'Visited report issue page',
+    
+    // Page Navigation
+    'welcome_page_view': 'Visited welcome page',
+    'dashboard_view': 'Viewed dashboard',
+    'explore_page_view': 'Visited explore page',
+    'map_view': 'Viewed map',
+    'bookmarks_view': 'Visited bookmarks page',
+    'community_reports_view': 'Visited community reports',
+    'profile_view': 'Viewed profile page',
+    
+    // Content Actions
+    'download_activity': 'Downloaded content',
+    'share_activity': 'Shared content',
+    'profile_edit': 'Updated profile',
+    
+    // Admin Activities
+    'admin_dashboard_view': 'Accessed admin dashboard',
+    'admin_user_profile_view': 'Viewed user profile (admin)',
+    'admin_user_activities_view': 'Viewed user activities (admin)',
+    
+    // Other
+    'search_performed': 'Performed search',
+    'page_view': 'Viewed page'
+  };
+  
+  return fullActionMap[this.action] || this.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 module.exports = mongoose.model('UserActivityLog', userActivityLogSchema);

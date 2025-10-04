@@ -31,7 +31,8 @@ import {
   Ban,
   UserCheck,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Activity
 } from 'lucide-react';
 
 interface AdminStats {
@@ -724,6 +725,10 @@ const AdminDashboard = () => {
               <Ban className="h-4 w-4 mr-1" />
               Blocked Users
             </TabsTrigger>
+            {/* <TabsTrigger value="activity" className="data-[state=active]:bg-[#2759C5] data-[state=active]:text-white text-white/60">
+              <Activity className="h-4 w-4 mr-1" />
+              User Activity
+            </TabsTrigger> */}
             <TabsTrigger value="analytics" className="data-[state=active]:bg-[#2759C5] data-[state=active]:text-white text-white/60">Analytics</TabsTrigger>
           </TabsList>
 
@@ -1040,6 +1045,133 @@ const AdminDashboard = () => {
                     ))
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <Card className="bg-background border-white/30">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  User Activity Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  {/* Activity Category Cards */}
+                  <div className="bg-[#111827] border border-blue-500/30 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <LogOut className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold">Authentication</h3>
+                        <p className="text-white/60 text-sm">Login/Logout activities</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#111827] border border-amber-500/30 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-amber-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold">Bookmarks</h3>
+                        <p className="text-white/60 text-sm">Save/Unsave activities</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#111827] border border-green-500/30 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                        <Download className="h-5 w-5 text-green-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold">Downloads</h3>
+                        <p className="text-white/60 text-sm">PDF & file downloads</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#111827] border border-purple-500/30 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="h-5 w-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold">Engagement</h3>
+                        <p className="text-white/60 text-sm">Likes, shares & votes</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-white mb-4">Recent User Activities</h3>
+                  
+                  {users.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Activity className="h-12 w-12 text-white/30 mx-auto mb-4" />
+                      <p className="text-white/60 text-lg">No user activities to display</p>
+                      <p className="text-white/40 text-sm">User activities will appear here as they interact with the platform</p>
+                    </div>
+                  ) : (
+                    users.filter(user => user.role !== 'admin' && !user.isBlocked).slice(0, 5).map((user) => (
+                      <div key={user._id} className="border border-white/30 rounded-lg p-4 bg-[#111827]">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white">{user.fullName}</h3>
+                            <p className="text-white/60">@{user.username}</p>
+                            <p className="text-white/60">{user.email}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge variant="secondary" className="bg-[#2759C5] text-white">
+                                {user.role}
+                              </Badge>
+                              <Badge variant={user.isActive ? 'default' : 'outline'} className={user.isActive ? 'bg-green-600 text-white' : 'bg-gray-600 text-white'}>
+                                {user.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-white/50 mt-1">
+                              Joined: {new Date(user.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 flex items-center gap-1"
+                              onClick={() => navigate(`/admin/user-activities/${user._id}`)}
+                            >
+                              <Activity className="h-3 w-3" />
+                              View Activities
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-white/30 text-white hover:bg-[#2759C5] hover:border-[#2759C5] flex items-center gap-1"
+                              onClick={() => navigate(`/admin/userprofile/${user._id}`)}
+                            >
+                              <Eye className="h-3 w-3" />
+                              View Profile
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {users.filter(user => user.role !== 'admin' && !user.isBlocked).length > 5 && (
+                  <div className="text-center mt-6">
+                    <p className="text-white/60 text-sm">
+                      Showing 5 of {users.filter(user => user.role !== 'admin' && !user.isBlocked).length} users
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

@@ -2,10 +2,14 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { logActivity } = require('../middleware/activityLogger');
 const { uploadIssueImage } = require('../utils/cloudinary');
 const Issue = require('../models/Issue');
 const User = require('../models/User');
 const router = express.Router();
+
+// Apply activity logging to all routes
+router.use(logActivity());
 
 // Get all issues with filtering and pagination
 router.get('/', async (req, res) => {

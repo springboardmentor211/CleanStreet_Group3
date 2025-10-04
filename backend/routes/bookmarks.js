@@ -3,6 +3,10 @@ const router = express.Router();
 const User = require('../models/User');
 const Issue = require('../models/Issue');
 const { auth } = require('../middleware/auth');
+const { logActivity } = require('../middleware/activityLogger');
+
+// Apply activity logging to all routes
+router.use(logActivity());
 
 // @desc    Toggle bookmark for an issue
 // @route   POST /api/bookmarks/:issueId/toggle
