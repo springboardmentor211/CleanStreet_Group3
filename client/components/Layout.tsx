@@ -2,15 +2,16 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { UserCircle, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n, LanguageToggle } from "@/lib/i18n-context";
 
 interface LayoutProps {
   children: ReactNode;
 }
 export function Layout({ children }: LayoutProps) {
-
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useI18n();
   // Logout handler
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -68,24 +69,25 @@ export function Layout({ children }: LayoutProps) {
               </svg>
             </div>
             <h1 className="text-white text-xl sm:text-2xl font-bold">
-              Clean Street
+              {t('cleanStreet')}
             </h1>
           </div>
 
           {/* Right side */}
           {isWelcomeOrExplore ? (
             <div className="flex items-center space-x-4">
+              <LanguageToggle />
               <Link
                 to="/login"
                 className="px-4 py-2 rounded-md bg-cs-blue-secondary text-white font-semibold hover:bg-cs-blue-light transition-colors"
               >
-                Login
+                {t('login')}
               </Link>
               <Link
                 to="/register"
                 className="px-4 py-2 rounded-md bg-white text-cs-blue-secondary font-semibold hover:bg-gray-200 transition-colors"
               >
-                Register
+                {t('register')}
               </Link>
             </div>
           ) : (
@@ -101,7 +103,7 @@ export function Layout({ children }: LayoutProps) {
                         : "text-white"
                     } hover:text-cs-blue-secondary transition-colors`}
                   >
-                    Dashboard
+                    {t('dashboard')}
                   </Link>
                   <Link
                     to="/report"
@@ -111,7 +113,7 @@ export function Layout({ children }: LayoutProps) {
                         : "text-white"
                     } hover:text-cs-blue-secondary transition-colors`}
                   >
-                    Report Issues
+                    {t('reportIssue')}
                   </Link>
                   <Link
                     to="/complaints"
@@ -121,7 +123,7 @@ export function Layout({ children }: LayoutProps) {
                         : "text-white"
                     } hover:text-cs-blue-secondary transition-colors`}
                   >
-                    View Complaints
+                    {t('viewComplaints')}
                   </Link>
 
                   <Link
@@ -132,7 +134,7 @@ export function Layout({ children }: LayoutProps) {
                         : "text-white"
                     } hover:text-cs-blue-secondary transition-colors`}
                   >
-                    Bookmarks
+                    {t('bookmarks')}
                   </Link>
 
                   <Link
@@ -143,7 +145,7 @@ export function Layout({ children }: LayoutProps) {
                         : "text-white"
                     } hover:text-cs-blue-secondary transition-colors`}
                   >
-                    Issue Map
+                    {t('issueMap')}
                   </Link>
 
                   {/* <Link
@@ -161,6 +163,7 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Profile + Logout */}
               <div className="flex items-center space-x-2 sm:space-x-4">
+                <LanguageToggle />
                 <Link to="/profile">
                   <UserCircle className="w-10 h-10 text-white hover:text-cs-blue-light transition-colors" />
                 </Link>
@@ -170,7 +173,7 @@ export function Layout({ children }: LayoutProps) {
                 >
                   <LogOut className="w-4 h-4 text-white" />
                   <span className="text-white text-sm font-bold hidden sm:inline">
-                    Logout
+                    {t('logout')}
                   </span>
                 </button>
               </div>

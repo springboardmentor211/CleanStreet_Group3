@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authAPI } from "@/lib/api";
+import { useI18n, LanguageToggle } from "@/lib/i18n-context";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");

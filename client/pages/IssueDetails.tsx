@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { ThumbsUp, ThumbsDown, MessageCircle, MapPin, Clock, ArrowLeft, User, Calendar, Eye, Share2, Bookmark, Check, Copy, BookmarkCheck, Download } from "lucide-react";
 import { issuesAPI, adminAPI, bookmarksAPI } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n-context";
 import { toast } from "sonner";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -13,6 +14,7 @@ export default function IssueDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t, tStatus } = useI18n();
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState("");
@@ -219,7 +221,7 @@ export default function IssueDetails() {
       });
     } catch (err) {
       console.error('Failed to copy link:', err);
-      toast.error("Failed to copy link", {
+      toast.error(t('failedToCopyLink'), {
         description: "Unable to copy link. Please try again.",
         duration: 3000,
       });
@@ -253,7 +255,7 @@ export default function IssueDetails() {
       }
     } catch (err) {
       console.error('Failed to toggle bookmark:', err);
-      toast.error("Failed to bookmark issue", {
+      toast.error(t('failedToBookmark'), {
         description: "Please try again.",
         duration: 3000,
       });
@@ -507,8 +509,7 @@ export default function IssueDetails() {
 
       // Status, Location, and Date (compact)
       checkNewPage(25);
-      const statusText = issue.status === 'open' ? 'Open' : 
-                        issue.status === 'in-progress' ? 'In Progress' : 'Resolved';
+      const statusText = tStatus(issue.status);
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'normal');
       pdf.text(`Status: ${statusText}`, margin, yPosition);
@@ -671,7 +672,7 @@ export default function IssueDetails() {
 
     } catch (err) {
       console.error('Failed to generate PDF:', err);
-      toast.error("Failed to generate PDF", {
+      toast.error(t('failedToGeneratePDF'), {
         description: "Please try again.",
         duration: 3000,
       });
@@ -1039,11 +1040,7 @@ export default function IssueDetails() {
                       issue.status === 'Closed' || issue.status === 'closed' ? 'bg-slate-500/20 text-slate-300 border border-slate-500/30' :
                       'bg-gray-500/20 text-gray-300 border border-gray-500/30'
                     }`}>
-                      {issue.status === 'Open' || issue.status === 'open' ? 'Open' : 
-                       issue.status === 'In Progress' || issue.status === 'in-progress' ? 'In Progress' :
-                       issue.status === 'Resolved' || issue.status === 'resolved' ? 'Resolved' :
-                       issue.status === 'Closed' || issue.status === 'closed' ? 'Closed' :
-                       issue.status || 'Unknown'}
+                      {tStatus(issue.status) || 'Unknown'}
                     </span>
                   </div>
                   

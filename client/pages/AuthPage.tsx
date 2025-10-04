@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authAPI } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n, LanguageToggle } from "@/lib/i18n-context";
 import { Eye, EyeOff, ArrowRight, Users, MapPin, CheckCircle, Heart } from "lucide-react";
 
 export default function AuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useI18n();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -65,7 +67,7 @@ export default function AuthPage() {
 
     // Basic validation
     if (!email || !password) {
-      setError("Please fill in all required fields");
+      setError(t('fillAllFields'));
       setLoading(false);
       return;
     }
@@ -83,7 +85,7 @@ export default function AuthPage() {
         }, 100);
       } else {
         if (!username || !fullName) {
-          setError("Please fill in all required fields");
+          setError(t('fillAllFields'));
           setLoading(false);
           return;
         }
@@ -98,7 +100,7 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       console.error("Auth error:", err);
-      setError(err.message || `${isLogin ? 'Login' : 'Registration'} failed`);
+      setError(err.message || (isLogin ? t('loginFailed') : t('registrationFailed')));
     } finally {
       setLoading(false);
     }
@@ -147,7 +149,7 @@ export default function AuthPage() {
                     </clipPath>
                   </defs>
                 </svg>
-                <h1 className="text-3xl font-bold">Clean Street</h1>
+                <h1 className="text-3xl font-bold">{t('cleanStreet')}</h1>
               </div>
 
               {/* Dynamic Welcome Message */}
@@ -156,12 +158,12 @@ export default function AuthPage() {
                 className="animate-in slide-in-from-left duration-500"
               >
                 <h2 className="text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-cs-blue-light bg-clip-text text-transparent">
-                  {isLogin ? "Welcome Back!" : "Join Our Community"}
+                  {isLogin ? t('welcomeBack') : t('joinOurCommunity')}
                 </h2>
                 <p className="text-xl text-white/80 leading-relaxed">
                   {isLogin 
-                    ? "We're glad to see you again. Ready to continue making our city cleaner and safer together?"
-                    : "Become a responsible citizen and help us build a cleaner, safer community for everyone."
+                    ? t('pleaseSignIn')
+                    : t('createYourAccount')
                   }
                 </p>
               </div>
@@ -173,8 +175,8 @@ export default function AuthPage() {
                     <MapPin className="w-6 h-6 text-cs-blue-secondary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Report Issues</h3>
-                    <p className="text-white/70">Easily report civic issues in your neighborhood</p>
+                    <h3 className="font-semibold">{t('reportIssues')}</h3>
+                    <p className="text-white/70">{t('reportIssuesDesc')}</p>
                   </div>
                 </div>
 
@@ -183,8 +185,8 @@ export default function AuthPage() {
                     <Users className="w-6 h-6 text-cs-blue-secondary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Community Driven</h3>
-                    <p className="text-white/70">Join thousands of active citizens</p>
+                    <h3 className="font-semibold">{t('communityDrivenTitle')}</h3>
+                    <p className="text-white/70">{t('communityDrivenDesc')}</p>
                   </div>
                 </div>
 
@@ -193,8 +195,8 @@ export default function AuthPage() {
                     <CheckCircle className="w-6 h-6 text-cs-blue-secondary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Track Progress</h3>
-                    <p className="text-white/70">See how your reports make a real impact</p>
+                    <h3 className="font-semibold">{t('trackProgressTitle')}</h3>
+                    <p className="text-white/70">{t('trackProgressDesc')}</p>
                   </div>
                 </div>
               </div>
@@ -204,7 +206,7 @@ export default function AuthPage() {
                 <div className="flex items-start space-x-3">
                   <Heart className="w-6 h-6 text-red-400 mt-1 flex-shrink-0" />
                   <blockquote className="text-white/90 italic">
-                    "Every small action counts. Together, we can create the change we want to see in our community."
+                    "{t('motivationalQuote')}"
                   </blockquote>
                 </div>
               </div>
@@ -257,12 +259,12 @@ export default function AuthPage() {
                   key={isLogin ? 'login-title' : 'signup-title'}
                   className="text-2xl font-bold text-white mb-2 animate-in fade-in duration-300"
                 >
-                  {isLogin ? "Sign In" : "Create Account"}
+                  {isLogin ? t('signIn') : t('createAccount')}
                 </h2>
                 <p className="text-white/70">
                   {isLogin 
-                    ? "Enter your credentials to sign in" 
-                    : "Join us in making our city better"
+                    ? t('pleaseSignIn') 
+                    : t('createYourAccount')
                   }
                 </p>
               </div>
@@ -283,10 +285,10 @@ export default function AuthPage() {
                     className="space-y-4 animate-in slide-in-from-right duration-500"
                   >
                     <div>
-                      <label className="block text-sm font-medium text-white/80 mb-2">Username *</label>
+                      <label className="block text-sm font-medium text-white/80 mb-2">{t('username')} *</label>
                       <input
                         type="text"
-                        placeholder="Choose a username"
+                        placeholder={t('enterUsername')}
                         className="w-full p-3 rounded-xl bg-[#0B0F19] border border-white/20 text-white placeholder:text-white/50 focus:border-cs-blue-secondary focus:outline-none focus:ring-2 focus:ring-cs-blue-secondary/20 transition-all duration-200"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -295,10 +297,10 @@ export default function AuthPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-white/80 mb-2">Full Name *</label>
+                      <label className="block text-sm font-medium text-white/80 mb-2">{t('fullName')} *</label>
                       <input
                         type="text"
-                        placeholder="Enter your full name"
+                        placeholder={t('enterFullName')}
                         className="w-full p-3 rounded-xl bg-[#0B0F19] border border-white/20 text-white placeholder:text-white/50 focus:border-cs-blue-secondary focus:outline-none focus:ring-2 focus:ring-cs-blue-secondary/20 transition-all duration-200"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
@@ -307,10 +309,10 @@ export default function AuthPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-white/80 mb-2">Phone Number</label>
+                      <label className="block text-sm font-medium text-white/80 mb-2">{t('phoneNumber')}</label>
                       <input
                         type="tel"
-                        placeholder="Phone number (optional)"
+                        placeholder={t('enterPhoneNumber')}
                         className="w-full p-3 rounded-xl bg-[#0B0F19] border border-white/20 text-white placeholder:text-white/50 focus:border-cs-blue-secondary focus:outline-none focus:ring-2 focus:ring-cs-blue-secondary/20 transition-all duration-200"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
@@ -321,10 +323,10 @@ export default function AuthPage() {
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">Email *</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">{t('email')} *</label>
                   <input
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={t('enterEmail')}
                     className="w-full p-3 rounded-xl bg-[#0B0F19] border border-white/20 text-white placeholder:text-white/50 focus:border-cs-blue-secondary focus:outline-none focus:ring-2 focus:ring-cs-blue-secondary/20 transition-all duration-200"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -334,11 +336,11 @@ export default function AuthPage() {
 
                 {/* Password */}
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-2">Password *</label>
+                  <label className="block text-sm font-medium text-white/80 mb-2">{t('password')} *</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
-                      placeholder={isLogin ? "Enter your password" : "Create a strong password"}
+                      placeholder={t('enterPassword')}
                       className="w-full p-3 rounded-xl bg-[#0B0F19] border border-white/20 text-white placeholder:text-white/50 focus:border-cs-blue-secondary focus:outline-none focus:ring-2 focus:ring-cs-blue-secondary/20 transition-all duration-200 pr-12"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -362,14 +364,14 @@ export default function AuthPage() {
                         type="checkbox" 
                         className="rounded border-white/20 bg-[#0B0F19] text-cs-blue-secondary focus:ring-cs-blue-secondary/20" 
                       />
-                      <span>Remember me</span>
+                      <span>{t('rememberMe')}</span>
                     </label>
                     <button
                       type="button"
                       onClick={() => navigate("/forgot-password")}
                       className="text-cs-blue-secondary hover:text-cs-blue-light transition-colors"
                     >
-                      Forgot Password?
+                      {t('forgotPassword')}?
                     </button>
                   </div>
                 )}
@@ -384,7 +386,7 @@ export default function AuthPage() {
                     <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span>{isLogin ? "Sign In" : "Create Account"}</span>
+                      <span>{isLogin ? t('signIn') : t('createAccount')}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -393,28 +395,29 @@ export default function AuthPage() {
                 {/* Toggle Mode */}
                 <div className="text-center pt-4">
                   <p className="text-white/70">
-                    {isLogin ? "Don't have an account?" : "Already have an account?"}
+                    {isLogin ? t('dontHaveAccount') : t('alreadyHaveAccount')}
                     {" "}
                     <button
                       type="button"
                       onClick={toggleMode}
                       className="text-cs-blue-secondary hover:text-cs-blue-light transition-colors font-semibold"
                     >
-                      {isLogin ? "Sign Up" : "Sign In"}
+                      {isLogin ? t('signUp') : t('signIn')}
                     </button>
                   </p>
                 </div>
               </form>
             </div>
 
-            {/* Back to Home */}
-            <div className="text-center mt-6">
+            {/* Language Toggle and Back to Home */}
+            <div className="flex justify-between items-center mt-6">
               <button
                 onClick={() => navigate("/")}
                 className="text-white/50 hover:text-white transition-colors text-sm"
               >
-                ← Back to Home
+                ← {t('backToHome')}
               </button>
+              <LanguageToggle />
             </div>
           </div>
         </div>

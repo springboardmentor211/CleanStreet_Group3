@@ -27,6 +27,7 @@ import MapComponent from "@/components/MapComponent";
 import { Upload, Camera, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {Layout} from "@/components/Layout"; // Use the same layout as other pages
+import { useI18n } from "@/lib/i18n-context";
 
 import MiniMap from "../components/MiniMap";
 const issueTypeEnum = [
@@ -51,6 +52,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const ReportIssue = () => {
+  const { t } = useI18n();
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
     lng: number;
@@ -167,18 +169,18 @@ const ReportIssue = () => {
   };
 
   const issueTypes = [
-    { label: "Pothole", value: "Pothole" },
-    { label: "Garbage", value: "Garbage" },
-    { label: "Streetlight", value: "Streetlight" },
-    { label: "Water", value: "Water" },
-    { label: "Other", value: "Other" },
+    { label: t('pothole'), value: "Pothole" },
+    { label: t('garbage'), value: "Garbage" },
+    { label: t('streetlight'), value: "Streetlight" },
+    { label: t('water'), value: "Water" },
+    { label: t('other'), value: "Other" },
   ];
 
   const priorityLevels = [
-    { value: "Low", label: "Low Priority" },
-    { value: "Medium", label: "Medium Priority" },
-    { value: "High", label: "High Priority" },
-    { value: "Critical", label: "Critical" },
+    { value: "Low", label: t('lowPriority') },
+    { value: "Medium", label: t('mediumPriority') },
+    { value: "High", label: t('highPriority') },
+    { value: "Critical", label: t('criticalPriority') },
   ];
 
   return (
@@ -186,11 +188,10 @@ const ReportIssue = () => {
     <div className=" bg-[#111827] p-4 md:p-10 max-w-[80%] mx-auto w-full rounded-2xl shadow-lg border border-white/10 mb-10">
         <div className="mb-12 text-center rounded">
           <h1 className="text-3xl  font-bold text-foreground mb-2">
-            Report a Civic Issue
+            {t('reportACivicIssue')}
           </h1>
           <p className="text-muted-foreground">
-            Help us keep our community clean and safe by reporting issues that
-            need attention.
+            {t('helpKeepCommunityClean')}
           </p>
         </div>
 
@@ -204,7 +205,7 @@ const ReportIssue = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-xl">
                       <AlertTriangle className="h-6 w-6 text-civic-blue" />
-                      Issue Details
+                      {t('issueDetails')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-8">
@@ -215,11 +216,11 @@ const ReportIssue = () => {
                     name="issueTitle"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-lg font-semibold">Issue Title</FormLabel>
+                        <FormLabel className="text-lg font-semibold">{t('issueTitle')}</FormLabel>
                         <FormControl>
                           <Input
                             className="border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white h-12 text-lg placeholder:text-gray-400"
-                            placeholder="Brief description of the issue"
+                            placeholder={t('briefDescriptionPlaceholder')}
                             {...field}
                           />
                         </FormControl>
@@ -236,7 +237,7 @@ const ReportIssue = () => {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category</FormLabel>
+                        <FormLabel>{t('category')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -244,7 +245,7 @@ const ReportIssue = () => {
                         >
                           <FormControl>
                             <SelectTrigger className="border-2 border-gray-600 focus:border-blue-400 focus:ring-blue-500/20 bg-gray-800 text-white h-12">
-                              <SelectValue placeholder="Select category" />
+                              <SelectValue placeholder={t('selectCategory')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -253,7 +254,7 @@ const ReportIssue = () => {
                                 key={type.value}
                                 value={type.value}
                               >
-                                {type.label}
+                                  {type.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -268,7 +269,7 @@ const ReportIssue = () => {
                     name="priorityLevel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Priority Level</FormLabel>
+                        <FormLabel>{t('priority')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
@@ -276,7 +277,7 @@ const ReportIssue = () => {
                         >
                           <FormControl>
                             <SelectTrigger className="border-2 border-gray-600 focus:border-blue-400 focus:ring-blue-500/20 bg-gray-800 text-white h-12">
-                              <SelectValue placeholder="Select priority" />
+                              <SelectValue placeholder={t('selectPriority')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -298,15 +299,15 @@ const ReportIssue = () => {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Nearby Landmark{" "}
+                          {t('nearbyLandmark')}{" "}
                           <span className="text-muted-foreground">
-                            (Optional)
+                            ({t('optional')})
                           </span>
                         </FormLabel>
                         <FormControl>
                           <Input 
                             className="border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white h-12 placeholder:text-gray-400 xl:col-span-2"
-                            placeholder="e.g. Near City Hall" 
+                            placeholder={t('nearbyLandmarkPlaceholder')} 
                             {...field} 
                           />
                         </FormControl>
@@ -323,16 +324,16 @@ const ReportIssue = () => {
                     name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Address</FormLabel>
+                        <FormLabel>{t('address')}</FormLabel>
                         <FormControl>
                           <Input
                             className="border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white h-12 placeholder:text-gray-400"
-                            placeholder="Enter street address or search location"
+                            placeholder={t('enterStreetAddress')}
                             {...field}
                           />
                         </FormControl>
                         <p className="text-xs text-muted-foreground">
-                          Type an address to search and zoom the map, or click on the map to select a location
+                          {t('addressSearchInstructions')}
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -347,10 +348,10 @@ const ReportIssue = () => {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description</FormLabel>
+                        <FormLabel>{t('description')}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Describe the issue in detail..."
+                            placeholder={t('describeIssueDetail')}
                             className="min-h-[120px] border-2 border-gray-600 focus:border-blue-400 focus-visible:ring-blue-500/20 bg-gray-800 text-white resize-none placeholder:text-gray-400"
                             {...field}
                           />
@@ -369,7 +370,7 @@ const ReportIssue = () => {
               <div className="xl:col-span-2 space-y-8">
                 <Card className="transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/10 border-2">
                   <CardHeader>
-                    <CardTitle className="text-xl">Location on Map</CardTitle>
+                    <CardTitle className="text-xl">{t('locationOnMap')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <MiniMap 
@@ -378,7 +379,7 @@ const ReportIssue = () => {
                     />
                     {selectedLocation && (
                       <div className="mt-4 p-3 bg-gray-700 border border-blue-500 rounded-lg">
-                        <p className="text-sm font-medium text-blue-300">Selected Location:</p>
+                        <p className="text-sm font-medium text-blue-300">{t('selectedLocation')}</p>
                         <p className="text-xs text-blue-200">
                           Lat: {selectedLocation.lat.toFixed(6)}, Lng: {selectedLocation.lng.toFixed(6)}
                         </p>
@@ -392,7 +393,7 @@ const ReportIssue = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-xl">
                       <Camera className="h-6 w-6 text-civic-blue" />
-                      Photos (Optional)
+                      {t('photosOptional')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -405,11 +406,11 @@ const ReportIssue = () => {
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <Upload className="w-10 h-10 mb-4 text-muted-foreground" />
                             <p className="mb-2 text-base text-muted-foreground">
-                              <span className="font-semibold">Click to upload</span>{" "}
-                              photos of the issue
+                              <span className="font-semibold">{t('clickToUpload')}</span>{" "}
+                              {t('uploadPhotosDesc')}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              PNG, JPG, GIF up to 10MB
+                              {t('fileTypes')}
                             </p>
                           </div>
                           <Input
@@ -483,13 +484,13 @@ const ReportIssue = () => {
                   setFileInputKey(prev => prev + 1);
                 }}
               >
-                Clear Form
+                {t('clearForm')}
               </Button>
               <Button
                 type="submit"
                 className="h-12 px-8 text-lg bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-600 hover:border-blue-700"
               >
-                Submit Report
+                {t('submitReport')}
               </Button>
             </div>
           </form>

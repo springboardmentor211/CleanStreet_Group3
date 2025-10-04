@@ -2,10 +2,13 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
 import { ArrowRight, Users, MapPin, CheckCircle } from "lucide-react";
 import { useEffect } from "react";
+import { useI18n, LanguageToggle } from "@/lib/i18n-context";
 import Explore from "./Explore";
 
 export default function Welcome() {
   const { isAuthenticated } = useAuth();
+  const { t } = useI18n();
+  
   useEffect(() => {
     window.scrollTo(0, 0); // Reset scroll on page load
   }, []);
@@ -61,18 +64,19 @@ export default function Welcome() {
               </svg>
             </div>
             <h1 className="text-white text-xl sm:text-2xl font-bold">
-              Clean Street
+              {t('cleanStreet')}
             </h1>
           </div>
 
           {/* Auth Buttons or Dashboard Button */}
           <div className="flex items-center space-x-4">
+            <LanguageToggle />
             {isAuthenticated ? (
               <Link
                 to="/dashboard"
                 className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
               >
-                Dashboard
+                {t('dashboard')}
               </Link>
             ) : (
               <>
@@ -80,13 +84,13 @@ export default function Welcome() {
                   to="/auth?mode=login"
                   className="text-white hover:text-cs-blue-light transition-colors px-4 py-2"
                 >
-                  Login
+                  {t('login')}
                 </Link>
                 <Link
                   to="/auth?mode=register"
                   className="bg-cs-blue-secondary text-white px-6 py-2 rounded-cs-button hover:bg-cs-blue-primary transition-colors"
                 >
-                  Register
+                  {t('register')}
                 </Link>
               </>
             )}
@@ -106,18 +110,16 @@ export default function Welcome() {
         <div className="flex-1 flex flex-col justify-center items-center text-center max-w-7xl mx-auto relative z-10">
           <div className="animate-in slide-in-from-top duration-700">
             <h1 className="text-white text-4xl sm:text-6xl lg:text-7xl font-bold mb-6">
-              Make Our City
+              {t('makeOurCity')}
               <span className="block bg-gradient-to-r from-cs-blue-secondary to-cs-blue-light bg-clip-text text-transparent">
-                Clean & Safe
+                {t('cleanAndSafe')}
               </span>
             </h1>
           </div>
           
           <div className="animate-in slide-in-from-bottom duration-700 delay-200">
             <p className="text-white/80 text-xl sm:text-2xl max-w-3xl mx-auto mb-12 leading-relaxed">
-              Join thousands of citizens reporting issues and working together to
-              improve our community. From potholes to streetlights, your voice
-              matters.
+              {t('joinThousandsDescription')}
             </p>
           </div>
 
@@ -126,24 +128,24 @@ export default function Welcome() {
             <div className="animate-in slide-in-from-left duration-700 delay-300">
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105">
                 <Users className="w-8 h-8 text-cs-blue-secondary mx-auto mb-3" />
-                <h3 className="text-white font-semibold mb-2">Community Driven</h3>
-                <p className="text-white/70 text-sm">Join thousands of active citizens making a difference</p>
+                <h3 className="text-white font-semibold mb-2">{t('communityDriven')}</h3>
+                <p className="text-white/70 text-sm">{t('communityDrivenDesc')}</p>
               </div>
             </div>
             
             <div className="animate-in slide-in-from-bottom duration-700 delay-400">
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105">
                 <MapPin className="w-8 h-8 text-cs-blue-secondary mx-auto mb-3" />
-                <h3 className="text-white font-semibold mb-2">Easy Reporting</h3>
-                <p className="text-white/70 text-sm">Report issues quickly with location and photo upload</p>
+                <h3 className="text-white font-semibold mb-2">{t('easyReporting')}</h3>
+                <p className="text-white/70 text-sm">{t('easyReportingDesc')}</p>
               </div>
             </div>
             
             <div className="animate-in slide-in-from-right duration-700 delay-500">
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105">
                 <CheckCircle className="w-8 h-8 text-cs-blue-secondary mx-auto mb-3" />
-                <h3 className="text-white font-semibold mb-2">Track Progress</h3>
-                <p className="text-white/70 text-sm">See real-time updates on reported issues</p>
+                <h3 className="text-white font-semibold mb-2">{t('trackProgressCard')}</h3>
+                <p className="text-white/70 text-sm">{t('trackProgressCardDesc')}</p>
               </div>
             </div>
           </div>
@@ -156,7 +158,7 @@ export default function Welcome() {
                   to="/dashboard"
                   className="flex items-center space-x-2 bg-gradient-to-r from-cs-blue-primary to-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:from-cs-blue-secondary hover:to-cs-blue-primary transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cs-blue-primary/20"
                 >
-                  <span>Go to Dashboard</span>
+                  <span>{t('goToDashboard')}</span>
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               ) : (
@@ -165,14 +167,14 @@ export default function Welcome() {
                     to="/auth?mode=register"
                     className="flex items-center space-x-2 bg-gradient-to-r from-cs-blue-primary to-cs-blue-secondary text-white px-8 py-4 rounded-cs-button text-lg font-medium hover:from-cs-blue-secondary hover:to-cs-blue-primary transition-all duration-300 transform hover:scale-105 hover:shadow-xl shadow-cs-blue-primary/20"
                   >
-                    <span>Start Reporting Issues</span>
+                    <span>{t('startReportingIssues')}</span>
                     <ArrowRight className="w-5 h-5" />
                   </Link>
                   <Link
                     to="/complaints"
                     className="flex items-center space-x-2 border border-white/30 text-white px-8 py-4 rounded-cs-button text-lg hover:bg-white/10 hover:border-white/50 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
                   >
-                    <span>View Community Reports</span>
+                    <span>{t('viewCommunityReports')}</span>
                   </Link>
                 </>
               )}
@@ -190,7 +192,7 @@ export default function Welcome() {
       <footer className="border-t border-white/30 px-4 sm:px-8 py-8">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-white/60">
-            © 2025 Clean Street. Building better communities together.
+            {t('copyrightText')}
           </p>
         </div>
       </footer>

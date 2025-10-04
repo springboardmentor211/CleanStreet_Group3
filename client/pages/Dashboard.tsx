@@ -2,6 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useEffect, useState, useRef } from "react";
 import { issuesAPI } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n-context";
 import { 
   FileText, 
   Clock, 
@@ -115,6 +116,7 @@ function ActivityItem({ title, time }: ActivityItemProps) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { t, tCategory, tStatus } = useI18n();
   const [metrics, setMetrics] = useState({
     total: 0,
     open: 0,
@@ -176,22 +178,22 @@ export default function Dashboard() {
 
   const stats = [
     {
-      title: "Total Issues",
+      title: t('totalIssues'),
       value: metrics.total,
       icon: <FileText className="w-[35px] h-[35px] text-white" />
     },
     {
-      title: "Open", 
+      title: t('open'), 
       value: metrics.open,
       icon: <Clock className="w-[35px] h-[35px] text-white" />
     },
     {
-      title: "In Progress",
+      title: t('inProgress'),
       value: metrics.inProgress, 
       icon: <RefreshCw className="w-[35px] h-[35px] text-white" />
     },
     {
-      title: "Resolved",
+      title: t('resolved'),
       value: metrics.resolved,
       icon: <CheckCircle className="w-[35px] h-[35px] text-white" />
     }
@@ -199,8 +201,8 @@ export default function Dashboard() {
 
   const defaultActivity = [
     {
-      title: "No recent issues found",
-      time: "Start by reporting an issue"
+      title: t('noRecentIssuesFound'),
+      time: t('startByReportingIssue')
     }
   ];
 
@@ -229,7 +231,7 @@ export default function Dashboard() {
       <div className="max-w-[1440px] mx-auto">
         {/* Page Title */}
         <h1 className="text-white text-2xl sm:text-3xl lg:text-[40px] font-bold mb-8 sm:mb-12">
-          Dashboard
+          {user?.fullName ? `${t('welcomeBackUser')}, ${user.fullName}!` : t('dashboard')}
         </h1>
 
         {/* Stats Grid */}
@@ -249,7 +251,7 @@ export default function Dashboard() {
           {/* Recent Activity */}
           <div className="xl:col-span-2">
             <h2 className="text-white text-xl sm:text-2xl lg:text-[36px] font-bold mb-6">
-              My Recent Issues
+              {t('myRecentIssues')}
             </h2>
             <div className="border border-white/30 rounded-cs-card bg-background p-6 min-h-[387px]">
               {/* Add Button */}
@@ -257,7 +259,7 @@ export default function Dashboard() {
                 <button
                   className="w-12 h-12 rounded-full bg-cs-blue-primary flex items-center justify-center focus:outline-none"
                   onClick={handleReportIssue}
-                  title="Report New Issue"
+                  title={t('reportNewIssue')}
                 >
                   <Plus className="w-7 h-7 text-white" />
                 </button>
@@ -267,13 +269,13 @@ export default function Dashboard() {
               <div className="space-y-0">
                 {loadingActivity ? (
                   <div className="py-6 text-center">
-                    <div className="text-white text-xl font-thin">Loading your recent issues...</div>
+                    <div className="text-white text-xl font-thin">{t('loadingRecentIssues')}</div>
                   </div>
                 ) : (
                   recentActivity.map((activity, index) => (
                     <div key={index} className="border-b border-white/30 last:border-b-0 py-6">
                       <div className="text-white text-[32px] font-light mb-2">
-                        {activity.title || "No recent issues found"}
+                        {activity.title || t('noRecentIssuesFound')}
                       </div>
                       <div className="text-white text-xl font-thin">
                         {activity.createdAt 
@@ -282,17 +284,17 @@ export default function Dashboard() {
                               day: 'numeric',
                               year: 'numeric'
                             })
-                          : activity.time || "Start by reporting an issue"
+                          : activity.time || t('startByReportingIssue')
                         }
                       </div>
                       {activity.category && (
                         <div className="text-cs-blue-secondary text-lg font-normal mt-1">
-                          Category: {activity.category}
+                          {t('categoryLabel')}: {tCategory(activity.category)}
                         </div>
                       )}
                       {activity.status && (
                         <div className="text-white/70 text-lg font-normal mt-1">
-                          Status: {activity.status}
+                          {t('statusLabel')}: {tStatus(activity.status)}
                         </div>
                       )}
                     </div>
@@ -305,22 +307,22 @@ export default function Dashboard() {
           {/* Quick Actions */}
           <div>
             <h2 className="text-white text-xl sm:text-2xl lg:text-[36px] font-bold mb-6">
-              Quick Actions
+              {t('quickActions')}
             </h2>
             <div className="space-y-4">
               <QuickAction
-                title="Report New Issue"
+                title={t('reportNewIssue')}
                 icon={<Plus className="w-7 h-7 text-white" />}
                 onClick={handleReportIssue}
                 primary
               />
               <QuickAction
-                title="View All Complaints"
+                title={t('viewAllComplaints')}
                 icon={<Eye className="w-7 h-7 text-white" />}
                 onClick={handleViewComplaints}
               />
               <QuickAction
-                title="Issue Map"
+                title={t('issueMap')}
                 icon={<Map className="w-7 h-7 text-white" />}
                 onClick={handleIssueMap}
               />

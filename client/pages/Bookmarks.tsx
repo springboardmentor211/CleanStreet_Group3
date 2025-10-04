@@ -5,10 +5,12 @@ import { IssueCard } from "@/components/IssueCard";
 import { Bookmark, BookmarkX, RefreshCw, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { bookmarksAPI } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n-context";
 import { toast } from "sonner";
 
 export default function Bookmarks() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,8 +111,8 @@ export default function Bookmarks() {
                   <Bookmark className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-white">My Bookmarks</h1>
-                  <p className="text-white/70">Issues you've saved for later</p>
+                  <h1 className="text-3xl font-bold text-white">{t('myBookmarks')}</h1>
+                  <p className="text-white/70">{t('issuesYouSaved')}</p>
                 </div>
               </div>
               
@@ -120,7 +122,7 @@ export default function Bookmarks() {
                 className="flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-all duration-300"
               >
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
+                <span>{t('refresh')}</span>
               </button>
             </div>
 
@@ -130,13 +132,13 @@ export default function Bookmarks() {
                 <div className="flex items-center gap-3">
                   <Heart className="w-5 h-5 text-amber-400" />
                   <span className="text-white font-medium">
-                    {totalItems} {totalItems === 1 ? 'Issue' : 'Issues'} Saved
+                    {totalItems} {totalItems === 1 ? t('issue') : t('issues')} {t('saved')}
                   </span>
                 </div>
                 
                 {totalPages > 1 && (
                   <div className="text-white/70 text-sm">
-                    Page {currentPage} of {totalPages}
+                    {t('page')} {currentPage} {t('of')} {totalPages}
                   </div>
                 )}
               </div>
@@ -149,15 +151,15 @@ export default function Bookmarks() {
               <div className="mb-8">
                 <BookmarkX className="w-24 h-24 text-white/20 mx-auto mb-4" />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">No Bookmarks Yet</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">{t('noBookmarksYet')}</h2>
               <p className="text-white/70 text-lg mb-8 max-w-md mx-auto">
-                Start bookmarking issues you care about to keep track of them here.
+                {t('noBookmarksDescription')}
               </p>
               <button
                 onClick={() => navigate('/complaints')}
                 className="px-8 py-4 bg-gradient-to-r from-cs-blue-primary to-cs-blue-secondary text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-cs-blue-primary/25 transition-all duration-300 transform hover:scale-105"
               >
-                Browse Community Reports
+                {t('browseIssues')}
               </button>
             </div>
           ) : (
