@@ -165,7 +165,7 @@ export default function Bookmarks() {
           ) : (
             <div className="space-y-8">
               {/* Issues Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-in-from-bottom rounded-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 animate-slide-in-from-bottom rounded-full">
                 {bookmarks.map((issue, index) => (
                   <div 
                     key={issue._id} 
@@ -199,9 +199,9 @@ export default function Bookmarks() {
                     <div className="absolute inset-0 bg-cs-blue-primary/5 rounded-cs-card opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                     
                     {/* Click hint */}
-                    <div className="absolute bottom-3 left-3 bg-cs-blue-primary/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                    {/* <div className="absolute bottom-3 left-3 bg-cs-blue-primary/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                       Click to view details
-                    </div>
+                    </div> */}
                   </div>
                 ))}
               </div>
