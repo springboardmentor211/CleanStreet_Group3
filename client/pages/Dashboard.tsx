@@ -82,7 +82,7 @@ function QuickAction({ title, icon, onClick, primary = false }: QuickActionProps
   return (
     <button
       onClick={onClick}
-      className={`w-full h-[78px] rounded-xl border flex items-center px-6 space-x-4 hover:opacity-80 transition-opacity ${
+      className={`w-full h-[78px] rounded-xl border flex items-center px-6 space-x-4 hover:opacity-80 hover:bg-cs-blue-secondary transition-opacity ${
         primary 
           ? 'bg-cs-blue-secondary border-black' 
           : 'bg-background border-white/30'
@@ -314,7 +314,6 @@ export default function Dashboard() {
                 title={t('reportNewIssue')}
                 icon={<Plus className="w-7 h-7 text-white" />}
                 onClick={handleReportIssue}
-                primary
               />
               <QuickAction
                 title={t('viewAllComplaints')}

@@ -655,6 +655,18 @@ const AdminDashboard = () => {
             <Card className="bg-background border-white/30">
               <CardContent className="p-6">
                 <div className="flex items-center">
+                  <FileText className="h-8 w-8 text-[#3576E0]" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-white/60">Total Issues</p>
+                    <p className="text-2xl font-bold text-white">{stats.totalIssues}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-background border-white/30">
+              <CardContent className="p-6">
+                <div className="flex items-center">
                   <Users className="h-8 w-8 text-[#2759C5]" />
                   <div className="ml-4">
                     <p className="text-sm font-medium text-white/60">Total Users</p>
@@ -676,17 +688,6 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-background border-white/30">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <FileText className="h-8 w-8 text-[#3576E0]" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-white/60">Total Issues</p>
-                    <p className="text-2xl font-bold text-white">{stats.totalIssues}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             <Card className="bg-background border-white/30">
               <CardContent className="p-6">
